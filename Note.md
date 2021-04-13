@@ -152,6 +152,40 @@
         completed
         == End ==
         <--  
-        
         </code>
         </pre>
+
+
+#### 5/98 Disposables
+- Disposed는 Observable이 전달하는 Event는 아니다
+- Parameter로 클로저를 던달하면 Observable과 관련된 모든 리소스가 제거된 후에 호출된다
+- Observable이 Completed나 Error Event로 해제되었다면 리소스도 해제된다
+- 그럼에도 되도록 해제할 때는 Disposable을 사용하는 것이 좋다
+- dispose()를 직접 호출하기보다는 DisposeBag을 사용하는 것이 좋다
+- dispose() 메소드를 직접 호출하면 completed event가 전달되지 않으므로, 직접 사용하지 않는 것이 좋다
+- 만약 특정 시점에 해지하고 싶다면 take until 메소드를 사용하는 것이 좋다
+
+#### 6/98 Operators
+
+- Observable과 관련된 여러 메소드들을 연산자라고 부른다
+- 연산자의 특징
+    - 연산자들은 Observable 상에서 동작하고, 새로운 Observable을 리턴한다
+    - Observable을 리턴하기 때문에 두 개 이상의 연산자를 연달아 호출할 수 있다
+    - 연산자는 보통 subscribe 메소드 앞에 추가한다
+    - 그래야 구독자로 전달된 최종 데이터가 우리가 원하는 데이터가 된다
+    - 연산자를 호출할 때는 호출 순서에 주의해야 한다 -> 호출 순서에 따라 다른 결과가 나올 수 있다
+  
+<pre>
+<code>
+let bag = DisposeBag()
+Observable.from([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    .take(5) // take 연산자는 소스 옵저버블이 방출하는 요소 중에서 파라미터로 지정한 수만큼 방출하는 새로운 옵저버블을 생성한다 -> 처음 5개의 요소만 전달한다
+    .filter { $0.isMultiple(of: 2) } // 짝수만 구독자로 전달 -> 1~5 사이의 짝수인 2와 4만 전달됨
+    .subscribe { print($0) }
+    .disposed(by: bag)
+--> 출력결과
+next(2)
+next(4)
+Completed
+</code>
+</pre>
