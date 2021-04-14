@@ -21,6 +21,7 @@
 - RxSwift로 코드를 작성하면 값이나 상태의 변화에 따라서 새로운 결과를 도출하는 코드를 비교적 쉽게 작성할 수 있다
   - 반응형 프로그래밍(Reactive Programming)
 
+***
 
 ### [2] Key Concepts
 #### 3/98 Observable and Obervers #1
@@ -189,3 +190,46 @@ next(4)
 Completed
 </code>
 </pre>
+
+
+***
+
+### [3] Subjects
+#### 7/98 Subjects Overview
+- Subject를 이해하기 위해서는 Observer와 Observable에 대해 알아야한다
+- Observable은 Event를 전달한다
+- Observer는 Observable을 구독하고 전달되는 Event를 처리한다
+- Observable은 Observer와 달리 다른 Observable을 구독하지 못한다
+- 마찬가지로 Observer는 다른 Observer로 Event를 전달하지 못한다
+- 반면 Subject는 다른 Observable로부터 Event를 받아서 Observer로 전달할 수 있다
+- 다시 말해 Subject는 Observable인 동시에 Observer이다
+
+- RxSwift는 네 가지 Subject를 제공한다
+    - 1. PublishSubject
+        - Subject로 전달되는 새로운 Event를 Observer로 전달한다
+    - 2. BehaviorSubject
+        - 생성시점의 시작 이벤트를 지정한다 그리고 Subject로 전달되는 Event 중에서 가장 마지막에 전달된 최신 Event를 저장해 두었다가 새로운 Observer에게 최신 Event를 전달한다
+    - 3. ReplaySubject 
+        - 하나 이상의 최신 Event를 Buffer에 저장한다. Observer가 구독을 시작하면 Buffer에 있는 모든 Event를 전달한다
+    - 4. AsyncSubject
+        - Subject로 Completed event가 전달되는 시점에 마지막으로 전달된 Next event를 Observer로 전달한다
+    
+- RxSwift는 Subject를 래핑하고 있는 두 가지 Relay를 제공한다
+    - 1. PublishRelay
+        -  PublishSubject를 래핑한 것
+    - 2. BehaviorRelay
+        - BehaviorSubject를 래핑한 것
+        
+    - Relay는 일반적인 Subject와 달리 Next event만 받고 나머지 Completed, Error event는 받지 않는다
+    - 주로 종료 없이 계속 전달되는 Event Sequence를 처리할 때 활용한다 
+
+
+#### 8/98 Publish Subject
+- PublishSubject는 Subject로 전달되는 Event를 Observer에게 전달하는 가장 기본적인 형태의 Subject이다
+- Subject는 Observable인 동시에 Observer이다
+- 다른 Source로부터 Event를 전달받을 수 있고, 다른 Observer로 이벤트를 전달할 수 있다
+- Observable에서 Observer로 Next event를 전달할 때 Observer로 onNext 메소드를 호출하고, 파라미터로 요소를 전달한다
+- Subject 역시 Observer이기 때문에 onNext를 호출할 수 있다
+- PublishSubject는 구독 이후에 전달되는 새로운 Event만 Observer로 전달한다
+- PublishSubject는 Event가 전달되면 즉시 Observer에게 전달한다. 그래서 Subject가 최초로 생성되는 시점과 첫 번째 구독이 시작되는 시점 사이에 전달되는 Event는 그냥 사라진다.
+- Event가 사라지는 것이 문제가 된다면 Replay Subject를 사용하거나 Hold Observable을 사용한다
