@@ -188,6 +188,7 @@ Observable.from([1, 2, 3, 4, 5, 6, 7, 8, 9])
 next(2)
 next(4)
 Completed
+<--
 </code>
 </pre>
 
@@ -205,19 +206,19 @@ Completed
 - 다시 말해 Subject는 Observable인 동시에 Observer이다
 
 - RxSwift는 네 가지 Subject를 제공한다
-    - 1. PublishSubject
+    1. PublishSubject
         - Subject로 전달되는 새로운 Event를 Observer로 전달한다
-    - 2. BehaviorSubject
+    2. BehaviorSubject
         - 생성시점의 시작 이벤트를 지정한다 그리고 Subject로 전달되는 Event 중에서 가장 마지막에 전달된 최신 Event를 저장해 두었다가 새로운 Observer에게 최신 Event를 전달한다
-    - 3. ReplaySubject 
+    3. ReplaySubject 
         - 하나 이상의 최신 Event를 Buffer에 저장한다. Observer가 구독을 시작하면 Buffer에 있는 모든 Event를 전달한다
-    - 4. AsyncSubject
+    4. AsyncSubject
         - Subject로 Completed event가 전달되는 시점에 마지막으로 전달된 Next event를 Observer로 전달한다
     
 - RxSwift는 Subject를 래핑하고 있는 두 가지 Relay를 제공한다
-    - 1. PublishRelay
+    1. PublishRelay
         -  PublishSubject를 래핑한 것
-    - 2. BehaviorRelay
+    2. BehaviorRelay
         - BehaviorSubject를 래핑한 것
         
     - Relay는 일반적인 Subject와 달리 Next event만 받고 나머지 Completed, Error event는 받지 않는다
@@ -233,3 +234,47 @@ Completed
 - PublishSubject는 구독 이후에 전달되는 새로운 Event만 Observer로 전달한다
 - PublishSubject는 Event가 전달되면 즉시 Observer에게 전달한다. 그래서 Subject가 최초로 생성되는 시점과 첫 번째 구독이 시작되는 시점 사이에 전달되는 Event는 그냥 사라진다.
 - Event가 사라지는 것이 문제가 된다면 Replay Subject를 사용하거나 Hold Observable을 사용한다
+
+
+#### 9/98 Behavior Subject
+- Behavior Subject는 Publish Subject와 유사한 방식으로 동작한다
+- Subject로 전달된 Event를 Observer로 전달하는 것은 동일하다
+- 하지만 Subject를 생성하는 방식에 차이가 있다
+- Behavior Subject를 생성할 때는 Publish Subject와 다르게 하나의 값을 전달한다
+- 또 다른 차이는 Subject를 구독할 때 나타난다
+- Publish Subject는 내부에 Event가 저장되지 않은 상태로 생성된다
+- 그래서 Subject로 Event가 전달되기 전까지 Observer로 Event가 전달되지 않는다
+- Behavior Subject를 생성하면 내부에 Next event가 생성되고, Observer로 전달한 값이 저장된다
+- 새로운 구독자가 추가되면 저장되어 있던 Next event가 바로 전달된다
+- 다시 Behavior Subject로 Next event를 전달하면 Observer로 Next event가 전달된다
+- 이 시점에 새로운 Observer가 추가되면 가장 최신 Next event를 Observer로 전달한다
+
+<pre>
+<code>
+let b = BehaviorSubject<Int>(value: 0)
+
+b.subscribe { print("BehaviorSubject1 >>", $0) }
+    .disposed(by: disposeBag)
+
+b.onNext(1)
+
+b.subscribe { print("BehaviorSubject2 >>", $0) }
+    .disposed(by: disposeBag)
+
+//b.onCompleted()
+b.onError(MyError.error)
+
+b.subscribe { print("BehaviorSubject3 >>", $0) }
+    .disposed(by: disposeBag)
+    
+--> 출력결과
+BehaviorSubject1 >> next(0)
+BehaviorSubject1 >> next(1)
+BehaviorSubject2 >> next(1)
+BehaviorSubject1 >> error(error) // or completed
+BehaviorSubject2 >> error(error) // or completed
+BehaviorSubject3 >> error(error) // or completed
+<--
+    
+</code>
+</pre>
