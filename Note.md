@@ -278,3 +278,319 @@ BehaviorSubject3 >> error(error) // or completed
     
 </code>
 </pre>
+
+
+#### 10/98 Replay Subjects
+- Behavior Subject는 가장 최근 Next event 하나를 저장했다가 새로운 Observer로 전달한다
+    - 최신 이벤트를 제외한 나머지 모든 이벤트는 사라진다
+
+- 두 개 이상의 Event를 저장해두고 새로운 Observer로 전달하고 싶다면 Replay Subject를 사용한다
+- Replay Subject는 create 메소드로 생성한다
+- Subject를 생성할 때 buffer의 크기를 지정하는데 bufferSize를 3으로 하면 세 개의 Event를 저장하는 buffer가 생성된다
+- buffer에는 가장 마지막에 전달된 세 개의 Event가 전달된다
+- Replay Subject는 지정된 buffer 크기만큼 최신 Event를 저장하고 새로운 Observer에게 전달한다
+- buffer는 메모리에 저장되기 때문에 항상 메모리 사용량에 신경 써야 한다
+- 필요 이상으로 큰 buffer를 쓰는 것은 피해야 한다
+- Replay Subject는 종료 여부에 관계 없이 항상 buffer에 저장돼 있는 Event를 새로운 Observer에게 전달한다
+
+
+#### 11/98 Async Subjects
+- Async Subject는 이전의 Subject들과 Event를 전달하는 시점에 차이가 있다
+- Publish Subject, Behavior Subject, Replay Subject는 Subject로 Event가 전달되면 즉시 Observer에게 전달한다
+- 반면 Async Subject는 Subject로 Completed event가 전달되기 전까지 어떤 Event도 Observer로 전달하지 않는다
+- Completed event가 전달되면 그 시점에 가장 최근에 전달된 Next event 하나를 Observer에게 전달한다
+- Async Subject는 Completed event가 전달된 시점을 기준으로 가장 최근에 전달된 하나의 Next event를 Observer에게 전달한다
+- 만약 Async Subject로 전달된 Next event가 없다면 그냥 Completed event만 전달하고 종료한다
+- Error event가 전달된 경우에는 Next event가 Observer에게 전달되지 않고, Error event만 전달되고 종료한다
+
+
+#### 12/98 Relays
+- RxSwift는 두가지 Relay를 제공한다.
+    1. PublishRelay
+    2. BehaviorRelay
+- Relay는 Subject와 유사한 특징을 가지고 있고, 내부에 Subject를 래핑하고 있다
+- Publish Relay는 Publish Subject를 래핑하고 있고, Behavior Relay는 Behavior Subject를 래핑하고 있다
+- Relay는 Subject와 마찬가지로 다른 Source로부터 이벤트를 받아서 구독자에게 전달한다
+- 가장 큰 차이는 Next event만 전달한다는 것이다
+- Completed evnet와 Error event는 전달 받지도 않고, 전달 하지도 않는다
+- 그래서 Subject와 달리 종료되지 않는다
+- Observer가 Dispose 되기 전까지 계속 Event를 처리한다
+- 주로 UI 이벤트 처리에 활용된다
+- Relay는 RxSwift 프레임워크가 아닌 RxCocoa 프레임워크를 통해 제공된다
+- Subject에서는 onNext를 사용하지만, Relay에서 Next event를 전달할 때는 accept 메소드를 사용한다
+- accept 메소드를 호출하고 값을 전달하면 Observer에게 Next 이벤트가 전달된다
+- Behavior Relay는 Behavior Subject와 마찬가지로 하나의 값을 생성자로 전달한다
+- Behavior Relay는 value라는 속성을 제공한다
+    - Behavior Relay가 저장하고 있는 Next event에 접근해서 여기에 저장되어 있는 값을 리턴한다 
+    - 이 속성은 읽기 전용이고, 이 안에 있는 값을 바꿀 수는 없다
+    - 값을 바꾸고 싶다면, accept 메소드를 통해 새로운 Next event를 전달해야 한다
+
+
+
+***
+
+### [4] Create Operators
+#### 13/98 just, of, from
+- 하나의 요소를 방출하는 Observable을 생성할 때는 just 연산자를 사용한다
+- 두 개 이상의 요소를 방출하는 Observable을 생성할 때는 of 연산자를 사용한다
+- just와 of 연산자는 항목을 그대로 방출하기 때문에, 배열을 전달하면 배열이 방출된다
+- 배열에 저장된 요소를 하나씩 방출하는 Observable이 필요하다면 from 연산자를 사용한다
+
+1. just
+    - just는 하나의 항목을 방출하는 Observable을 생성한다
+    - just는 ObservableType 프로토콜에 Type 메소드로 선언되어 있다
+    - 파라미터로 하나의 요소를 받아서 Observable을 리턴한다
+    - from 연산자와 자주 혼동하게 되는데, just로 생성한 Observable은 파라미터로 전달한 요소를 그대로 방출한다는 사실을 기억하라
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let element = "😀"
+
+    Observable.just(element)
+       .subscribe { print($0) }
+       .disposed(by: disposeBag)
+       
+    --> 출력결과
+    next(😀)
+    completed
+    <--
+
+    Observable.just([1, 2, 3])
+       .subscribe { print($0) }
+       .disposed(by: disposeBag)
+       
+    --> 출력결과
+    next([1, 2, 3])
+    completed
+    <--
+       
+    </code>
+    </pre>
+
+2. of
+    - 만약 두 개 이상의 요소를 방출할 Observable을 만들어야 한다면 just로는 불가능하고, of 연산자를 사용해야 한다
+    - of의 경우 가변 파라미터로 설정되어 있어서 여러 개의 값을 동시에 전달할 수 있다
+    - of 역시 ObservableType 프로토콜의 Type 메소드로 선언되어 있다
+    - 방출할 요소를 원하는 수만큼 전달할 수 있다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let apple = "🍏"
+    let orange = "🍊"
+    let kiwi = "🥝"
+
+    Observable.of(apple, orange, kiwi)
+       .subscribe { element in print(element) }
+       .disposed(by: disposeBag)
+    
+    --> 출력결과
+    next(🍏)
+    next(🍊)
+    next(🥝)
+    completed
+    <--
+
+    Observable.of([1, 2], [3, 4], [5, 6])
+       .subscribe { element in print(element) }
+       .disposed(by: disposeBag)
+       
+       --> 출력결과
+       next([1, 2])
+       next([3, 4])
+       next([5, 6])
+       completed
+       <--
+       
+       
+    </code>
+    </pre>
+
+
+3. from
+    - 배열에 저장된 요소를 하나씩 방출하고 싶다면 from 연산자를 사용하면 된다
+    - from 역시 ObserableType 프로토콜의 Type 메소드로 선언되어 있다
+    - 첫 번째 파라미터로 배열을 받고, 리턴형은 배열이 아니라 배열에 포함된 요소이다
+    - 배열에 포함된 요소를 하나씩 순서대로 방출한다
+    - sequence 형식을 전달할 수도 있다
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let fruits = ["🍏", "🍎", "🍋", "🍓", "🍇"]
+
+    Observable.from(fruits)
+       .subscribe { element in print(element) }
+       .disposed(by: disposeBag)
+       
+    --> 출력결과
+    next(🍏)
+    next(🍎)
+    next(🍋)
+    next(🍓)
+    next(🍇)
+    completed
+    <--
+    
+    </code>
+    </pre>
+
+
+#### 14/98 range, generate
+- 정수를 지정된 수만큼 방출하는 Observable을 생성하기 위해서 range 연산자와 generate 연산자를 사용한다
+
+1. range
+    - range 연산자는 시작 값에서 1씩 증가하는 squence를 생성한다
+    - 증가되는 크기를 바꾸거나 감소하는 sequence를 생성하는 것은 불가능하다
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+
+    Observable.range(start: 1, count: 5)  // start -> 시작할 정수를 입력( 실수x ), count -> 방출할 정수의 수를 전달
+      .subsribe { print($0) }
+      .disposed(by: disposeBag)
+    --> 출력결과
+    next(1)
+    next(2)
+    next(3)
+    next(4)
+    next(5)
+    completed
+    <-- 
+    </code>
+    </pre>
+    
+    
+    2. generate
+    - generate 연산자의 경우 range 연산자와 다르게 파라미터 형식이 정수로 제한되지 않는다
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    
+    Observable.generate(initialState: 0,      // initialState -> 시작값을 전달한다. 즉, 가장 먼저 방출되는 값이 들어간다
+                        condition: { $0 <= 10},      // condition    -> true를 리턴하는 경우에만 요소가 방출된다, false를 리턴하면 Completed event를 전달하고 바로 종료한다
+                        iterate: { $0 + 2 })              // iterate          -> 값을 바꾸는 코드를 전달한다. 보통 값을 증가시키거나 감소시키는 코드를 전달한다
+        .subscribe { print($0)}
+        .disposed(by: disposeBag)
+        
+    --> 출력결과
+    next(0)
+    next(2)
+    next(4)
+    next(6)
+    next(8)
+    next(10)
+    completed
+    <--
+    </code>
+    </pre>
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let red = "🔴"
+    let blue = "🔵"
+
+    Observable.generate(initialState: red,
+                        condition: { $0.count < 6},
+                        iterate: { $0.count.isMultiple(of: 2) ? $0 + red : $0 + blue })
+        .subscribe { print($0) }
+        .disposed(by: disposeBag)
+        
+    --> 출력결과
+    next(🔴)
+    next(🔴🔵)
+    next(🔴🔵🔴)
+    next(🔴🔵🔴🔵)
+    next(🔴🔵🔴🔵🔴)
+    completed
+    <--
+    </code>
+    </pre>
+
+
+#### 15/98 repeatElement 
+- 동일한 요소를 반복적으로 방출하는 옵저버블을 생성
+- repeatElement는 ObservableType 프로토콜의 Type 메소드로 선언되어 있다
+- 첫 번째 파라미터로 요소를 전달하면 이 요소를 반복적으로 방출하는 Observable을 리턴한다
+- 반복적의 의미는 설명에 나와 있는 대로(infinitely) 무한적으로 방출하는 것을 의미한다
+- repeatElement 연산자를 사용할 때는 방출되는 횟수를 제한해주는 것이 아주 중요하다
+- take 연산자를 사용해서 방출 횟수를 지정할 수 있다
+
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let element = "❤️"
+Observable.repeatElement(element)
+  .subscribe { print($0) }
+--> 출력결과
+next(❤️)  ... 무한반복
+<--
+
+Observable.repeatElement(element)
+  .take(3)
+  .subscribe { print($0) }
+  .disposed(by: disposeBag)
+--> 출력결과
+next("❤️")
+next("❤️")
+next("❤️")
+completed
+<--
+</code>
+</pre>
+
+
+#### 16/98 deferred
+- 특정 조건에 따라서 Observable을 생성할 수 있다
+- Observable을 리턴하는 클로저를 파라미터로 받는다
+
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let animals = ["🐶", "🐱", "🐹"]
+let fruits = ["🍎", "🍐", "🍋"]
+var flag = true
+
+
+let factory: Observable<String> = Observable.deferred {
+    flag.toggle()
+    
+    if flag {
+        return Observable.from(animals)
+    } else {
+        return Observable.from(fruits)
+    }
+}
+
+factory
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+
+factory
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+
+factory
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+    
+    
+--> 출력결과
+next(🍎)
+next(🍐)
+next(🍋)
+completed
+next(🐶)
+next(🐱)
+next(🐹)
+completed
+next(🍎)
+next(🍐)
+next(🍋)
+completed
+<--
+    
+</code>
+</pre>
