@@ -394,12 +394,12 @@ BehaviorSubject3 >> error(error) // or completed
        .subscribe { element in print(element) }
        .disposed(by: disposeBag)
        
-       --> 출력결과
-       next([1, 2])
-       next([3, 4])
-       next([5, 6])
-       completed
-       <--
+   --> 출력결과
+   next([1, 2])
+   next([3, 4])
+   next([5, 6])
+   completed
+   <--
        
        
     </code>
@@ -430,7 +430,6 @@ BehaviorSubject3 >> error(error) // or completed
     next(🍇)
     completed
     <--
-    
     </code>
     </pre>
 
@@ -461,7 +460,7 @@ BehaviorSubject3 >> error(error) // or completed
     </pre>
     
     
-    2. generate
+2. generate
     - generate 연산자의 경우 range 연산자와 다르게 파라미터 형식이 정수로 제한되지 않는다
     
     <pre>
@@ -511,7 +510,7 @@ BehaviorSubject3 >> error(error) // or completed
 
 
 #### 15/98 repeatElement 
-- 동일한 요소를 반복적으로 방출하는 옵저버블을 생성
+- 동일한 요소를 반복적으로 방출하는 Observable을 생성
 - repeatElement는 ObservableType 프로토콜의 Type 메소드로 선언되어 있다
 - 첫 번째 파라미터로 요소를 전달하면 이 요소를 반복적으로 방출하는 Observable을 리턴한다
 - 반복적의 의미는 설명에 나와 있는 대로(infinitely) 무한적으로 방출하는 것을 의미한다
@@ -594,3 +593,92 @@ completed
     
 </code>
 </pre>
+
+
+#### 17/98 create
+- Observable이 동작하는 방식을 직접 구현
+- Observable을 종료하기 위해서는 onError 또는 onCompleted 메소드를 반드시 호출해야 한다
+- 둘 중 하나라도 호출하면 Observable이 종료되기 때문에, 그 이후에 onNext를 호출하면 요소가 방출되지 않는다
+- onNext를 호출하려면 onCompleted() 메소드 또는 onError() 전에 호출해야 한다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+
+enum MyError: Error {
+   case error
+}
+
+Observable<String>.create { (observer) -> Disposable in
+    
+    guard let url = URL(string: "https://www.apple.com") else {
+        observer.onError(MyError.error)
+        return Disposables.create()
+    }
+    
+    guard let html = try? String(contentsOf: url, encoding: .utf8) else {
+        observer.onError(MyError.error)
+        return Disposables.create()
+    }
+    
+    observer.onNext(html)
+    observer.onCompleted()
+    
+    return Disposables.create()
+}
+.subscribe { print($0) }
+.disposed(by: disposeBag)
+
+
+--> 출력결과
+https://www.apple.com - HTML ...
+...
+completed
+<--
+</code>
+</pre>
+
+
+#### 18/98 empty, error
+- 두 연산자가 생성한 Observable은 Next event를 전달하지 않는다는 공통점이 있다
+- 둘 다 어떠한 요소도 방출하지 않는다
+
+1. empty
+    - empty 연산자는 completed event를 전달하는 Observable을 생성한다 
+    - 요소를 방출하지 않기 때문에 요소의 형식은 중요하지 않다
+    - empty 연산자는 파라미터가 없다
+    - observer가 아무런 동작 없이 종료되어야 할 때 사용한다
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+
+    Observable<Void>.empty()
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+    
+    --> 출력결과
+    completed
+    <--
+    </code>
+    </pre>
+
+2. error
+    - error 연산자는 error 이벤트를 전달하고 종료한다
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+
+    enum MyError: Error {
+       case error
+    }
+
+    Observable<Void>.error(MyError.error)
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+    
+    --> 출력결과
+    error(error)
+    <--
+    </code>
+    </pre>
