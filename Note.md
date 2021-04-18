@@ -682,3 +682,73 @@ completed
     <--
     </code>
     </pre>
+
+
+***
+
+### [5] Filtering Operators
+#### 19/98 ignoreElementsOperator 
+- ignoreElements는 Observable이 방출하는 Next event를 필터링하고 Completed event와 Error event만 Observer에 전달한다
+- ignoreElements는 파라미터를 받지 않는다
+- 리턴형은 Completable인데, Completable은 트레이츠라고 부르는 특별한 Observable이다
+- Completable은 completed 또는 Error event만 전달하고 Next event는 무시한다
+- 주로 작업의 성공과 실패에만 관심이 있을 때 사용한다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let fruits = ["🍎", "🍓", "🍇"]
+
+Observable.from(fruits)
+  .ignoreElements()
+  .subscribe { print($0) }
+  .dispose(by: disposeBag)
+--> 출력결과
+completed
+<--
+</code>
+</pre>
+
+
+#### 20/98 elementAt Operator
+- elementAt은 특정 인덱스에 위치한 요소를 제한적으로 방출한다
+- elementAt은 정수 인덱스를 파라미터로 받아서 Observable을 리턴한다
+- 해당 인덱스의 요소를 방출하고 Completed event를 전달받는다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let fruits = ["🍎", "🍓", "🍇"]
+
+Observable.from(fruits)
+  .elementAt(1)
+  .subscribe { print($0) }
+  .dispose(by: disposeBag)
+--> 출력결과
+next(🍓)
+completed
+<--
+</code>
+</pre>
+
+
+#### 21/98 filter Operator
+- filter 연산자는 클로저를 파라미터로 받는다
+- true를 리턴하는 요소가 연산자가 리턴하는 Observable에 포함된다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+Observable.from(numbers)
+  .filter { $0.isMultiple(of: 2) }
+  .subscribe { print($0) }
+  .dispose(by: disposeBag)
+--> 출력결과
+next(2)
+next(4)
+next(6)
+next(8)
+next(10)
+completed
+<--
+</code>
+</pre>
