@@ -739,7 +739,7 @@ let disposeBag = DisposeBag()
 let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 Observable.from(numbers)
-  .filter { $0.isMultiple(of: 2) }
+  .filter { $0.isMultiple(of: 2) } // 짝수
   .subscribe { print($0) }
   .dispose(by: disposeBag)
 --> 출력결과
@@ -752,3 +752,161 @@ completed
 <--
 </code>
 </pre>
+
+
+#### 22/98 skip, skipWhile, skipUntil Operator
+- 특정 요소를 무시
+
+1. skip
+    - skip 연산자는 정수를 파라미터로 받는다
+    - Observable이 방출하는 요소 중에서 지정된 수만큼 무시한 다음에 이후에 방출되는 요소만 Observer로 전달한다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5]
+
+    Observable.from(numbers)
+        .skip(3)
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+    
+    --> 출력결과
+    next(4)
+    next(5)
+    completed
+    <--
+    </code>
+    </pre>
+    
+2. skipWhile
+    - skipWhile은 클로저를 파라미터로 받는다 
+    - 이 클로저는 filter 연산자와 마찬가지로 predicate로 사용되고, 클로저에서 true를 리턴하는 동안 방출되는 요소를 무시한다
+    - 클로저에서 false를 리턴하면 그때부터 요소를 방출하고, 이후에는 조건에 관계 없이 모든 요소를 방출한다
+    - 연산자는 방출되는 요소를 포함한 Observable을 리턴한다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 3, 4, 8, 9, 10]
+
+
+    Observable.from(numbers)
+        .skipWhile { !$0.isMultiple(of: 2) } // 홀수
+        .subscribe { print($0) }
+        .disposed(by: disposeBag)
+        
+    --> 출력결과
+    next(4)
+    next(8)
+    next(9)
+    next(10)
+    completed
+    <--
+    </code>
+    </pre>
+    
+    
+3. skipUntil
+    - skipUntil 연산자는 Observable 타입을 파라미터로 받는다
+    - 다른 Observable을 파라미터로 받고, 이 Observable이 Next event를 전달하기 전까지, 원본 Observable이 전달하는 Event를 무시한다
+    - 이런 특징 때문에 파라미터로 전달되는 Observable을 trigger라고 부르기도 한다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+
+    let subject = PublishSubject<Int>()
+    let trigger = PublishSubject<Int>()
+
+    subject.skipUntil(trigger)
+        .subscribe { print($0) }
+        .dispose(by: disposeBag)
+      
+    subject.onNext(1)
+    // 아직 trigger가 요소를 방출한적이 없기 때문에 subject가 방출한 요소는 Observer로 전달되지 않는다
+
+    trigger.onNext(0)
+    // 이번에는 trigger에서 요소를 방출하고 있다. 그런데 subject가 이전에 방출했던 요소는 여전히 Observer로 전달되지 않는다
+    // skipUntil은 trigger가 요소를 방출한 이후부터 원본 Observable에서 방출되는 요소들을 Observer로 전달한다
+
+    subject.onNext(2)
+
+    --> 출력결과
+    next(2)
+    completed
+    <--
+    </code>
+    </pre>
+
+
+#### 23/98 take, takeWhile, takeUntil, takeLast Operator
+1. take
+    - 정수를 파라미터로 받아서 해당 숫자만큼만 요소를 방출한다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5]
+
+    Observable.from(numbers)
+        .take(3)
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+    
+    --> 출력결과
+    next(1)
+    next(2)
+    next(3)
+    completed
+    <--
+    </code>
+    </pre>
+    
+2. takeWhile
+    - 클로저를 파라미터로 받아서 predicate로 사용한다
+    - true를 리턴하면 Observer에게 전달된다
+    - 연산자가 리턴하는 Observable에는 최종적으로 조건을 만족하는 요소들만 포함된다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    Observable.from(numbers)
+        .takeWhile { !$0.isMultiple(of: 2) }
+        .subscribe { print($0) }
+        .disposed(by: disposeBag)
+        
+    --> 출력결과
+    next(1) // 이후에도 홀수가 방출되지만 구독자로는 전달되지 않는다 (takeWhile 연산자는 클로저가 false를 리턴하면 더 이상 요소를 방출하지 않는다)
+    completed
+    <--
+    </code>
+    </pre>
+
+3. takeUntil
+    - Observable을 파라미터로 받는다
+    - 파라미터로 전달한 Observable에서 Next event를 전달하기 전까지 원본 Observable에서 Next event를 전달한다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    let subject = PublishSubject<Int>()
+    let trigger = PublishSubject<Int>()
+
+
+    subject.takeUntil(trigger)
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+
+    subject.onNext(1) // 아직 trigger가 Next event를 전달하지 않았기 때문에 요소를 방출하다
+    subject.onNext(2) // 아직 trigger가 Next event를 전달하지 않았기 때문에 요소를 방출하다
+
+    trigger.onNext(0) // completed evnet 전달
+    subject.onNext(3) // 정상적으로 실행되지만 completed event가 전달 되었기 때문에 더이상 요소를 방출하지 않는다.
+    --> 출력결과
+    next(1)
+    next(2)
+    completed
+    <--
+    </code>
+    </pre>
+
+4. takeLast
