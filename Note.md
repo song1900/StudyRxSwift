@@ -910,3 +910,227 @@ completed
     </pre>
 
 4. takeLast
+    - 정수를 파라미터로 받아서 Observable을 리턴한다
+    - 리턴되는 Observable에는 원본 Observable이 방출한 요소 중에서 마지막으로 방출한 n개의 요소가 포함된다
+    - 가장 중요한 점은 Observer로 전달되는 시점이 딜레이 된다는 점이다
+    - Error event가 전달되면 buffer에 있는 요소는 절달되지않고 Error event만 전달된다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    let subject = PublishSubject<Int>()
+
+    subject.takeLast(2)
+        .subscribe { print($0) }
+        .disposed(by: disposeBag)
+
+    numbers.forEach { subject.onNext($0) } // 아무것도 출력이 안되지만 코드는 정상실행. takeLast는 마지막에 방출한 9와 10을 buffer에 저장하고 있다
+
+    subject.onNext(11) // 새로운 요소를 방출하면 buffer에 저장되어있는 값이 10과 11로 업데이트된다
+
+    subject.onCompleted() // 이때 buffer에 저장된 요소가 Observer로 방출되고 Completed event가 전달된다
+    
+    --> 출력결과
+    next(10)
+    next(11)
+    completed
+    <--
+    
+    </code>
+    </pre>
+    
+    
+    #### 24/98 single Operator
+    - single 연산자는 원본 Observable에서 첫 번째 요소만 방출하거나, 조건과 일치하는 첫 번째 요소만 방출한다
+    - 두 개 이상의 요소가 방출되는 경우 Error가 발생한다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    Observable.just(1)
+        .single()
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+    
+    --> 출력결과
+    next(1)
+    completed
+    <--
+    </code>
+    </pre>
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    Observable.from(numbers)
+        .single()
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+    
+    --> 출력결과
+    next(1)
+    error(Sequence contains more than one element.)
+    <--
+    </code>
+    </pre>
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    Observable.from(numbers)
+        .single{ $0 == 3}
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+    
+    --> 출력결과
+    next(3)
+    completed
+    <--
+    </code>
+    </pre>
+    
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    let subject = PublishSubject<Int>()
+
+    subject.single()
+        .subscribe{ print($0) }
+        .disposed(by: disposeBag)
+
+    subject.onNext(100)
+    
+    --> 출력결과
+    next(100)  
+    // 새로운 요소를 방출하면 구독자에게 바로 전달된다.
+    // 다른 요소가 방출될 수도 있으므로 single 연산자가 리턴하는 Observable은 원본 Observable에서 completed event가 전달할 때까지 대기한다
+    // completed event가 전달되는 시점에 하나의 요소만 방출된 시점이라면 Observer에게 completed event가 전달되고, 그 사이에 다른 요소가 방출되었다면 Observer에게는 error event가 전달된다. 이와 같은 방식을 통해 하나의 요소만 방출되는 것을 보장받을 수 있다
+    <--
+    </code>
+    </pre>
+
+
+#### 25/98 distinctUntilChange Operator
+- distinctUntilChange 연산자는 동일한 항목이 연속적으로 방출되지 않도록 필터링 해준다
+- 원본 Observable에서 전달되는 두 개의 요소를 순서대로 비교한 다음에 이전 요소와 동일하면 방출하지 않는다
+- 두 개의 요소를 비교할 때는 비교 연산자로 비교한다
+- 단순히 연속적으로 방출되는 동일한 요소만 확인한다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let numbers = [1, 1, 3, 2, 2, 3, 1, 5, 5, 7, 7, 7]
+
+
+Observable.from(numbers)
+    .distinctUntilChanged()
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+    
+--> 출력결과
+next(1)
+next(3)
+next(2)
+next(3)
+next(1)
+next(5)
+next(7)
+completed
+<--
+</code>
+</pre>
+
+
+#### 26/98 debounce, throttle Operator
+- 두 연산자는 짧은 시간동안 반복적으로 방출되는 이벤트를 제어한다는 공통점이 있다
+- 연산자로 전달하는 파라미터도 동일하다
+- 하지만 연산의 결과는 완전히 다르다
+- throttle 연산자는 next event를 지정된 주기마다 하나씩 Observer에게 전달한다
+- 반면 debounce 연산자는 next event가 전달된 다음 지정된 시간이 경과하기까지 다른 evnet가 전달되지 않는다면 마지막으로 방출된 event를 Observer에게 전달한다
+- 짧은 시간 동안 반복되는 tap 이벤트나 delegate 이벤트를 처리할 때는 throttle을 사용하고, debounce는 주로 검색 기능을 구현할 때 사용한다
+- debounce를 활용해 사용자가 짧은 시간동안 연속적으로 타이핑을 할 때는 검색작업을 실행하지 않다가, 타이핑을 멈추면 검색을 실행한다
+- toArray 연산자는 별도의 파라미터를 받지는 않는다
+- 하나의 요소를 방출하거나 error event를 방출하는 ObservableType의 메소드이다
+- 하나의 요소를 방출하고 바로 종료한다
+
+1. debounce
+    - 첫 번째 파라미터(dueTime: RxTimeInterval)에는 시간을 전달한다
+    - 이 시간은 연산자가 next event를 방출할지 결정하는 조건으로 사용된다
+    - Observer가 next event를 방출한 다음 지정된 시간 동안 다른 next event를 방출하지 않는다면 해당 시점에 가장 마지막으로 방출된 next event를 Observer에게 전달한다
+    - 반대로 지정된 시간 이내에 또 다른 next event를 방출했다면 타이머를 초기화한다
+    - 타이머를 초기화한 다음에 다시 지정된 시간 동안 대기한다
+    - 이 시간 이내에 다른 event가 방출되지 않는다면 마지막 event를 방출하고 event가 방출된다면 타이머를 다시 초기화한다
+    - 두 번째 파라미터(scheduler: SchedulerType)에는 타이머를 실행할 scheduler를 전달한다
+    
+2. throttle
+    - 세 개의 파라미터(dueTime: RxTimeInterval, latest: Bool, scheduler: SchedulerType)를 받는다
+    - 기본값을 가진 두 번째 파라미터는 생략하는 경우가 많기 때문에 debounce와 파라미터가 동일하다고 생각해도 무방하다
+    - 첫 번째 파라미터에는 반복 주기를 전달하고, 세 번째 파라미터에는 scheduler를 전달한다
+    - 지정된 주기 동안 하나의 event만 Observer에게 전달한다
+    - 보통 두 번째 파라미터는 기본값을 사용하는데, 주기를 엄격하게 지킨다
+    - 항상 지정된 주기마다 하나씩 event를 전달한다
+    - 두 번째 파라미터에 false를 부여하면, 반복 주기가 경과한 다음 가장 먼저 방출되는 event를 Observer에게 전달한다    
+
+
+***
+
+### [6] Tranforming Operators
+#### 27/98 toArray Operator
+- Observable이 방출하는 모든 요소를 배열에 담은 다음, 이 배열을 방출하는 Observable을 생성한다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+
+let subject = PublishSubject<Int>()
+
+subject
+    .toArray()
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+
+subject.onNext(1)
+subject.onNext(2)
+
+subject.onCompleted()
+--> 출력결과
+success([1, 2])
+<--
+</code>
+</pre>
+
+
+#### 28/98 map Operator
+- Observable 배출하는 항목을 대상으로 함수를 실행하고 결과를 방출하는 Observable를 리턴한다
+- 사용하다보면 파라미터와 동일한 형식을 리턴해야 한다고 생각하는 경우가 많지만 그런 제약은 없다
+- Observable이 방출하는 요소들을 대상으로 클로저를 실행하고 그 결과를 Observer에게 전달한다
+- 클로저로 전달되는 파라미터의 형식은 소스 Observable이 방출하는 요소와 동일하다
+- 하지만 클로저가 리턴하는 값의 형식은 고정되어 있지 않으며, 원하는 형식으로 리턴할 수 있다
+
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let skills = ["Siwft", "SwiftUI", "RxSwift"]
+
+Observable.from(skills)
+//  .map { "Hello, \($0)"}
+  .map { $0.count }
+  .subscribe { print($0) }
+  .disposed(by: disposeBag)
+  
+==> 출력결과
+// next(Hello, Swift)
+// next(Hello, SwiftUI)
+// next(Hello, RxSwift)
+next(5)
+next(7)
+next(7)
+completed
+</code>
+</pre>
