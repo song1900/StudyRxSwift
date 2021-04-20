@@ -1134,3 +1134,329 @@ next(7)
 completed
 </code>
 </pre>
+
+
+#### 29/98 flatMap Operator
+- 모든 Observable이 방출하는 항목을 모아서 최종적으로 하나의 Observable을 리턴한다
+- 클로저를 파라미터로 받는데, BehaviorSubject를 원하는대로 변환한 다음 새로운 Observable을 리턴해야 한다
+- flatMap이 내부적으로 여러 개의 Observable을 생성하지만, 최종적으로 모든 Observable이 하나의 Observable로 합쳐지고, 방출되는 항목들이 순서대로 Observer에게 전달된다
+- 원본 Observable이 방출하는 항목을 새로운 Observable로 변환한다. 새로운 Observable은 항목이 업데이트 될 때마다 새로운 항목을 방출한다
+- 이렇게 생성된 모든 Observable은 최종적으로 하나의 Observable로 합쳐지고, 모든 항목들이 이 Observable을 통해서 Observer로 전달 된다
+- 단순히 처음에 방출된 항목만 Observer로 전달되는 것이 아니라 업데이트된 최신 항목도 Observer로 전달된다
+- 이 연산자는 네트워크 요청을 구현할 때 자주 활용한다
+
+<pre>
+<code>
+let disposeBag = DisposeBag()
+
+let a = BehaviorSubject<Int>(value: 1)
+let b = BehaviorSubject<Int>(value: 2)
+
+let subject = PublishSubject<BehaviorSubject<Int>>()
+
+subject
+    .flatMap { $0.asObservable() }
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+
+subject.onNext(a)
+subject.onNext(b)
+
+a.onNext(11)
+b.onNext(22)
+
+--> 출력결과
+next(1)
+next(2)
+next(11)
+next(22)
+<--
+</code>
+</pre>
+
+
+#### 30/98 flatMapFirst, flatMapLatest Operator
+1. flatMapFirst
+    - flatMapFirst의 연산자, 리턴형은 flatMap과 동일하다
+    - 하지만 연산자가 리턴하는 Observable에는 처음에 변환된 Observable이 방출하는 항목만 포함된다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+
+    let a = BehaviorSubject(value: 1)
+    let b = BehaviorSubject(value: 2)
+
+    let subject = PublishSubject<BehaviorSubject<Int>>()
+
+    subject
+       .flatMapFirst { $0.asObservable() }
+       .subscribe { print($0) }
+       .disposed(by: disposeBag)
+
+    subject.onNext(a)
+    subject.onNext(b)
+
+    a.onNext(11)
+    b.onNext(22)
+    b.onNext(222)
+    a.onNext(111)
+    
+    --> 출력결과
+    next(1)
+    next(11)
+    next(111)
+    <--
+    </code>
+    </pre>
+    
+2. flatMapLatest
+    - flatMapLatest는 원본 Observable이 방출하는 항목을 Observable로 변환하는 것은 동일하다
+    - 반면 모든 Observable이 방출하는 항목을 하나로 병합하지 않는다
+    - 대신 가장 최근의 항목을 방출한 Observable을 제외한 나머지는 모두 무시한다
+    <pre>
+    <code>
+    let disposeBag = DisposeBag()
+
+    let a = BehaviorSubject(value: 1)
+    let b = BehaviorSubject(value: 2)
+
+    let subject = PublishSubject<BehaviorSubject<Int>>()
+
+    subject
+       .flatMapLatest { $0.asObservable() }
+       .subscribe { print($0) }
+       .disposed(by: disposeBag)
+
+    subject.onNext(a)
+
+    a.onNext(11)
+
+    subject.onNext(b)
+
+    b.onNext(22)
+
+    a.onNext(11) // Observer로 전달되지 않아 출력되지 않는다
+
+    subject.onNext(a)
+
+    b.onNext(222) // Observer로 전달되지 않아 출력되지 않는다
+    a.onNext(111)
+    
+    --> 출력결과
+    next(1)
+    next(11)
+    next(2)
+    next(22)
+    next(11)
+    next(111)
+    <--
+    </code>
+    </pre>
+
+
+#### 31/98 scan Operator
+- 기본값으로 연산을 시작하고, 원본 Observable이 방출하는 항목을 대상으로 변환을 실행한 다음 결과를 방출하는 하나의 Observable을 리턴한다
+- 원본이 방출하는 항목의 수와 Observer로 전달되는 항목의 수가 동일하다
+- 첫 번째 파라미터로 기본값을 전달하고, 두 번째 파라미터에는 클로저를 전달한다
+- 이 연산자는 작업 결과를 누적 시키면서 중간 결과와 최종 결과가 모두 필요한 경우에 사용한다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+
+Observable.range(start: 1, count: 5)
+    .scan(0, accumulator: +)
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+
+--> 출력결과
+next(1) // 1+0
+next(3) // 1+2
+next(6) // 3+3
+next(10) // 6+4
+next(15) // 10+5
+completed
+<--
+</code>
+</pre>
+
+
+#### 32/98 buffer Operator
+- 특정 주기 동안 옵저버블이 방출하는 항목을 수집하고 하나의 배열로 리턴한다
+- RxSwift에서는 이런 동작을 Controlled Buffering 이라고 한다
+- 세 개의 파라미터(timeSpan: 항목을 수집할 시간(DispatchTimeInterval), count: 수집할 항목의 최대 숫자(Int), scheduler: SchedulerType)
+- 연산자의 리턴형은 Type 파라미터가 배열로 선언되어 있다
+- 지정된 시간동안 수집한 항목들을 배열에 담아서 리턴한다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+
+Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+  .buffer(timeSpan: .seconds(2), count: 3, scheduler: MainScheduler.instance)
+  .take(5) // 무한루프 방지
+  .subscribe { print($0) }
+  .disposed(by: disposerBag)
+==> 출력 결과
+next([0])
+next([1, 2, 3])  
+next([4, 5])
+next([6, 7])
+next([8, 9])
+completed  
+// Observable은 1초마다 항목을 방출하고 있고, buffer 연산자는 2초마다 세 개씩 수집하고 있다
+// buffer 연산자는 첫 번째 파라미터로 전달한 timeSpan이 경과하면 수집된 항목들을 즉시 방출한다
+// 두 번째 파라미터로 지정한 수만큼 수집되지 않았더라도 즉시 방출한다 (0만 출력되거나 1, 2, 3 세 개가 출력되는 경우)
+</code>
+</pre>
+
+
+#### 33/98 window Operator
+- window 연산자는 버퍼 연산자처럼 timeSpan과 maxCount를 지정해서 원본 Observable이 방출하는 항목들을 작은 단위의 Observable로 분해한다
+- buffer와 달리 window 연산자는 수집된 항목을 방출하는 Observable을 리턴한다
+- 리턴된 Observable이 무엇을 방출하고, 언제 완료되는지 이해하는 것이 중요하다
+- 파라미터는 buffer와 똑같이 첫 번째로는 timeSpan, 두 번째로는 count, 세 번째로는 scheduler를 전달한다
+- buffer 연산자와의 차이는 리턴형에 있다. buffer는 수집된 배열을 방출하는 Observable을 리턴, window 연산자는 Observable을 방출하는 Observable을 리턴
+- Observable이 방출하는 Observable을 inner Observable이라고 한다
+- inner Observable은 지정된 최대항목수만큼 방출하거나 지정된 시간이 경과하면 completed event를 전달하고 종료한다
+<pre>
+<code>
+let disposeBag = DisposeBag()
+
+Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+    .window(timeSpan: .seconds(5), count: 3, scheduler: MainScheduler.instance)
+    .take(5)
+    .subscribe{
+        print($0)
+        
+        if let observable = $0.element {
+            observable.subscribe { print(" inner: \($0)")}
+        }
+    }
+    .disposed(by: disposeBag)
+--> 출력결과
+next(RxSwift.AddRef<Swift.Int>)
+ inner: next(0)
+ inner: next(1)
+ inner: next(2)
+ inner: completed // 5초가 지나지 않았지만 max count (3) 만큼 항목을 배출했기때문에
+next(RxSwift.AddRef<Swift.Int>)
+ inner: next(3)
+ inner: next(4)
+ inner: next(5)
+ inner: completed
+next(RxSwift.AddRef<Swift.Int>)
+ inner: next(6)
+ inner: next(7)
+ inner: next(8)
+ inner: completed
+next(RxSwift.AddRef<Swift.Int>)
+ inner: next(9)
+ inner: next(10)
+ inner: next(11)
+ inner: completed
+next(RxSwift.AddRef<Swift.Int>)
+completed
+ inner: next(12)
+ inner: next(13)
+ inner: next(14)
+ inner: completed
+<-- 
+</code>
+</pre>
+
+
+#### 34/98 groupBy Operator
+- 연산자를 실행하면 클로저에서 동일한 값을 리턴하는 요소끼리 그룹으로 묶이고 그룹에 속한 요소들은 개별 Observable을 통해 방출된다
+- 연산자가 리턴하는 Observable을 보면 TypeParameter가 grouped Observable로 선언되어 있다
+- 방출하는 요소와 함께 key가 저장되어 있다
+
+1. key와 GroupedObservable 출력
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let words = ["Apple", "Banana", "Orange", "Book", "City", "Axe"]
+
+Observable.from(words)
+    .groupBy { $0.count }
+    .subscribe(onNext: { (groupedObservable) in
+        print(" key = \(groupedObservable.key)")
+        groupedObservable.subscribe{ print("   \($0)")}
+    })
+    .disposed(by: disposeBag)
+--> 출력결과
+key = 5
+  next(Apple)
+key = 6
+  next(Banana)
+  next(Orange)
+key = 4
+  next(Book)
+  next(City)
+key = 3
+  next(Axe)
+  completed
+  completed
+  completed
+  completed
+<--
+</code>
+</pre>
+
+2. 문자열 길이로 그룹핑
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let words = ["Apple", "Banana", "Orange", "Book", "City", "Axe"]
+
+Observable.from(words)
+    .groupBy{ $0.count }
+    .flatMap{ $0.toArray() }
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+--> 출력결과
+next(["Banana", "Orange"])
+next(["Axe"])
+next(["Apple"])
+next(["Book", "City"])
+completed
+<--
+</code>
+</pre>
+
+3. 첫번째 문자로 그룹핑
+<pre>
+<code>
+let disposeBag = DisposeBag()
+let words = ["Apple", "Banana", "Orange", "Book", "City", "Axe"]
+
+Observable.from(words)
+    .groupBy{ $0.first ?? Character(" ")}
+    .flatMap{ $0.toArray() }
+    .subscribe{ print($0) }
+    .disposed(by: disposeBag)
+--> 출력결과
+next(["Banana", "Book"])
+next(["Orange"])
+next(["City"])
+next(["Apple", "Axe"])
+completed
+<--
+</code>
+</pre>
+
+4. 홀수, 짝수로 그룹핑
+<pre>
+<code>
+let disposeBag = DisposeBag()
+
+Observable.range(start: 1, count: 10)
+    .groupBy { $0.isMultiple(of: 2) }
+    .flatMap{ $0.toArray() }
+    .subscribe{ print($0)}
+    .disposed(by: disposeBag)
+--> 출력결과
+next([1, 3, 5, 7, 9])
+next([2, 4, 6, 8, 10])
+completed
+<--
+</code>
+</pre>
