@@ -1460,3 +1460,38 @@ completed
 <--
 </code>
 </pre>
+
+
+***
+
+### [7] Tranforming Operators
+#### 35/98 startWith Operator
+- Observable이 요소를 방출하기 전에 다른 항목들을 앞 부분에 추가한다
+- 주로 기본값이나 시작값을 지정할 때 활용한다
+- 파라미터로 전달하는 하나 이상의 값을 Observable sequence 앞 부분에 추가한다. 그 다음 새로운 Observable을 리턴한다
+- 가장 마지막에 호출한 연산자로 전달한 값이 가장먼저 방출된다
+
+<pre>
+<code>
+let bag = DisposeBag()
+let numbers = [1, 2, 3]
+
+Observable.from(numbers)
+    .startWith(0)
+    .startWith(-3)
+    .startWith(-1, -2)
+    .subscribe{ print($0) }
+    .disposed(by: bag)
+    
+--> 출력결과
+next(-1)
+next(-2)
+next(0)
+next(-3)
+next(1)
+next(2)
+next(3)
+completed
+<--
+</code>
+</pre>
