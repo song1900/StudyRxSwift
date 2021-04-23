@@ -1495,3 +1495,52 @@ completed
 <--
 </code>
 </pre>
+
+
+#### 36/98 concat Operator
+- 두 개의 Observable을 연결
+- 연결된 모든 Observable이 방출하는 요소들이 방출 순서대로 정렬되지는 않는다
+- 이전 Observable이 모든 요소들을 방출하고 completed event를 전달해야 이어진 Observable이 방출을 시작한다
+
+1. Type 메소드
+    - 파라미터로 전달된 Collection에 있는 모든 Observable을 순서대로 연결한 하나의 Observable을 리턴한다
+
+2. Instance 메소드
+    - 대상 Observable이 completed event를 전달한 경우에 파라미터로 전달한 Observable을 연결한다
+    - 만약 error event가 전달된다면 Observable은 연결되지 않는다 ( type 메소드로 구현된 concat연산자도 마찬가지)
+    
+<pre>
+<code>
+let bag = DisposeBag()
+let fruits = Observable.from(["🍏", "🍎", "🥝"])
+let animals = Observable.from(["🐶", "🐱", "🐹"])
+
+// Type
+Observable.concat([fruits, animals])
+    .subscribe{ print($0) }
+    .disposed(by: bag)
+
+// Instance
+animals.concat(fruits)
+    .subscribe{ print($0) }
+    .disposed(by: bag)
+    
+--> 출력결과
+next(🍏)
+next(🍎)
+next(🥝)
+next(🐶)
+next(🐱)
+next(🐹)
+completed
+next(🐶)
+next(🐱)
+next(🐹)
+next(🍏)
+next(🍎)
+next(🥝)
+completed
+<--
+</code>
+</pre>
+    
