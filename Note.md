@@ -1544,3 +1544,37 @@ completed
 </code>
 </pre>
     
+
+#### 37/98 merge Operator
+- 여러 Observable이 방출하는 event를 하나의 Observable에서 방출하도록 병합하는 merge 연산자
+- concat 연산자와 혼동하기 쉽지만 동작 방식이 다르다
+- concat은 하나의 Observable이 모든 요소를 방출하고 completed event를 전달하면 이어지는 Observable을 연결
+- merge는 두 개 이상의 Observable을 병합하고 모든 Observable에서 방출하는 요소들을 순서대로 방출하는 Observable을 리턴한다
+- merge는 두 개 이상의 Observable이 방출하는 요소들을 병합한 하나의 Observable을 리턴한다
+- 단순히 뒤에 연결하는 것이 아니라 하나의 Observable로 합쳐준다
+
+
+
+#### 38/98 combineLatest Operator
+- 소스 Observable이 방출하는 최신 요소를 병합하는 combineLatest 연산자
+- combine은 결합한다는 의미이다
+- 소스 Observable을 결합한 다음 파라미터로 전달한 함수를 실행하고 결과를 방출하는 새로운 Observable을 리턴한다
+- 핵심은 연산자가 리턴한 Observable이 언제 event를 방출하는지 이해하는 것이다
+- 두 개의 Observable과 클로저를 파라미터를 받는다
+- Observable이 next event를 통해 전달하는 요소들은 클로저 파라미터를 통해 클로저에 전달된다
+- 이후 클로저는 실행 결과를 리턴하고 연산자는 최종적으로 이 결과를 방출하는 Observable을 리턴한다
+- 다양한 오버로딩이 있는데, 클로저를 전달하지 않는 경우에는 리턴 타입이 달라진다
+- 파라미터로 전달한 Observable이 방출하는 요소들을 하나의 tuple로 합친 다음, 이 tuple을 방출하는 Observable을 리턴한다
+- Observable을 최대 여덟개까지 전달할 수 있는 연산자들이 선언되어 있다
+- 파라미터의 수만 다르고 동작 방식은 동일하다
+
+
+#### 39/98 zip Operator
+- Indexed Sequencing을 구현하는 zip 연산자
+- combineLatest와 비교해서 이해하면 쉽게 이해할 수 있다
+- zip 연산자는 소스 Observable이 방출하는 요소를 결합한다
+- Observable을 결합하고 클로저를 실행한 다음 이 결과를 방출하는 result Observable을 리턴한다
+- 집 연산자는 클로저에게 중복되는 요소를 전달하지 않고, index가 일치하는 짝을 전달한다
+- 첫 번째 요소는 첫 번째 요소와 결합하고, 두 번째 요소는 두 번째 요소와 결합한다
+- 소스 Observable이 방출하는 요소들을 순서를 일치시켜 결합하는 것을 Indexed Sequencing이라고 한다
+
