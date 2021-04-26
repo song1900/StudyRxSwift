@@ -1568,13 +1568,275 @@ completed
 - Observable을 최대 여덟개까지 전달할 수 있는 연산자들이 선언되어 있다
 - 파라미터의 수만 다르고 동작 방식은 동일하다
 
+<pre>
+<code>
+let bag = DisposeBag()
+
+enum MyError: Error {
+   case error
+}
+
+let greetings = PublishSubject<String>()
+let languages = PublishSubject<String>()
+
+
+Observable.combineLatest(greetings, languages) { lhs, rhs -> String in
+    return "\(lhs) \(rhs)"
+}
+    .subscribe { print($0) }
+    .disposed(by: bag)
+
+greetings.onNext("Hi")
+languages.onNext("World!")
+
+greetings.onNext("Hello")
+languages.onNext("RxSwift")
+
+//greetings.onCompleted()
+greetings.onError(MyError.error)
+languages.onNext("SwiftUI")
+
+languages.onCompleted() // 모든 Observable이 completed event를 전달하면 이 시점에 Observer에게 completed event가 전달된다
+
+--> 출력결과
+next(Hi World!)
+next(Hello World!)
+next(Hello RxSwift)
+error(error) // error가 하나라도 전달되면 그 즉시 구독자에게 error event를 전달하고 종료한다.
+// next(Hello SwiftUI)
+// completed
+<--
+</code>
+</pre>
+
 
 #### 39/98 zip Operator
 - Indexed Sequencing을 구현하는 zip 연산자
-- combineLatest와 비교해서 이해하면 쉽게 이해할 수 있다
-- zip 연산자는 소스 Observable이 방출하는 요소를 결합한다
+- 소스 Observable이 방출하는 요소를 결합한다
 - Observable을 결합하고 클로저를 실행한 다음 이 결과를 방출하는 result Observable을 리턴한다
-- 집 연산자는 클로저에게 중복되는 요소를 전달하지 않고, index가 일치하는 짝을 전달한다
-- 첫 번째 요소는 첫 번째 요소와 결합하고, 두 번째 요소는 두 번째 요소와 결합한다
+- zip 연산자는 클로저에게 중복되는 요소를 전달하지 않고, index가 일치하는 짝을 전달한다
 - 소스 Observable이 방출하는 요소들을 순서를 일치시켜 결합하는 것을 Indexed Sequencing이라고 한다
 
+<pre>
+<code>
+let bag = DisposeBag()
+
+enum MyError: Error {
+   case error
+}
+
+let numbers = PublishSubject<Int>()
+let strings = PublishSubject<String>()
+
+Observable.zip(numbers, strings) { "\($0) - \($1)" }
+    .subscribe { print($0) }
+    .disposed(by: bag)
+
+numbers.onNext(1)
+strings.onNext("one")
+
+numbers.onNext(2)
+strings.onNext("two")
+
+//numbers.onCompleted()
+numbers.onError(MyError.error) // 하나라도 error event를 전달하면 즉시 구독자에게 error event가 전달되고 종료된다
+
+strings.onNext("three")
+strings.onCompleted()
+
+--> 출력결과
+next(1 - one)
+next(2 - two)
+error(error)
+//completed
+<--
+</code>
+</pre>
+
+
+#### 40/98 withLatestFrom Operator
+- 연산자를 호출하는 Observable을 trigger Observable이라고 부르고 파라미터로 전달하는 Observable을 data Observable이라고 부른다
+- trigger Observable이 next event를 방출하면 data Observable이 가장 최근에 방출한 Next event를 Observer에게 전달
+
+<pre>
+<code>
+let bag = DisposeBag()
+
+enum MyError: Error {
+   case error
+}
+
+let trigger = PublishSubject<Void>()
+let data = PublishSubject<String>()
+
+trigger.withLatestFrom(data)
+    .subscribe { print($0) }
+    .disposed(by: bag)
+
+data.onNext("Hello")
+trigger.onNext(())
+trigger.onNext(())
+
+//data.onCompleted()
+//data.onError(MyError.error)
+//trigger.onNext(())
+
+trigger.onCompleted() 
+
+--> 출력결과
+next(Hello)
+next(Hello)
+// error(error) // completed와 달리 error는 바로 전달된다
+// next(Hello) // completed가 아닌 next가 전달 된다
+completed // 바로 전달된다 ( error도 마찬가지 )
+<--
+</code>
+</pre>
+
+
+#### 41/98 sample Operator
+- trigger Observable이 next event를 전달할 때마다 data Observable이 next event를 방출하지만, 동일한 next event를 반복해서 방출하지 않는 sample 연산자
+- dataObservable.withLatestFrom(triggerObservable) 과 같은 형태로 사용한다 (withLatestFrom 연산자와 반대)
+- data Observable에서 연산자를 호출하고 trigger Observable을 파라미터로 전달한다
+- trigger Observable에서 next event를 전달할 때마다 data Observable이 최신 Event를 방출한다
+- 동일한 next event를 반복해서 방출하지 않는 차이가 있다
+
+<pre>
+<code>
+let bag = DisposeBag()
+
+enum MyError: Error {
+   case error
+}
+
+let trigger = PublishSubject<Void>()
+let data = PublishSubject<String>()
+
+data.sample(trigger)
+    .subscribe{ print($0) }
+    .disposed(by: bag)
+
+trigger.onNext(())
+data.onNext("Hello")
+
+trigger.onNext(())
+trigger.onNext(()) // 동일한 연산자는 방출되지 않는다
+
+//data.onCompleted()
+//trigger.onNext(())
+
+data.onError(MyError.error)
+
+--> 출력결과
+next(Hello)
+//completed
+error(error) //  trigger Observable이 next event를 방출하지 않더라도 즉시 Observer에게 전달된다
+
+<--
+</code>
+</pre>
+
+
+
+#### 42/98 switchLatest Operator
+- 가장 최근에 방출된 Observable을 구독하고, 이 Observable이 전달하는 event를 Observer에게 전달하는 switchLatest 연산자
+- 가장 최근 Observable이 방출하는 event를 Observer에게 전달한다
+- 어떤 Observable이 가장 최근 Observable인지 이해하는 것이 핵심이다
+- 주로 Observable을 방출하는 Observable에서 사용된다
+- source Observable이 가장 최근에 방출한 Observable을 구독하고 여기에서 전달하는 next event를 방출하는 새로운 Observable을 리턴한다
+
+<pre>
+<code>
+let bag = DisposeBag()
+
+enum MyError: Error {
+  case error
+}
+
+let a = PublishSubject<String>()
+let b = PublishSubject<String>()
+  
+let source = PublishSubject<Observable<String>>()
+  
+source
+  .switchLatest()
+  .subscribe { print($0) }
+  .disposed(by: bag)
+  
+a.onNext("1")
+b.onNext("b")
+
+source.onNext(a) //  a를 최신 Observable로 설정
+
+a.onNext("2")
+b.onNext("b")
+
+source.onNext(b) // b를 최신 Observable로 설정
+
+a.onNext("3")
+b.onNext("c")
+
+// a.onCompleted() // completed 이벤트가 전달되지 않는다
+// b.onCompleted() // completed 이벤트가 전달되지 않는다
+
+// source.onCompleted() // completed 이벤트가 전달된다
+
+a.onError(MyError.error) // 최신 Observable이 아니기 때문에 error event가 전달되지 않는다
+b.onError(MyError.error) // 최신 Observable인 b는 error event를 받으면 즉시 Observer에게 전달 가능하다
+
+--> 출력결과
+next(2)
+next(c)
+// completed
+error(error)
+<--
+</code>
+</pre>
+
+
+
+#### 43/98 reduce Operator
+- seed 값과 Observable이 방출하는 요소를 대상으로 클로저를 실행하고 최종 결과를 Observable로 방출하는 reduce 연산자
+- scan 연산자와 비교하면 쉽게 이해할 수 있다
+- reduce 연산자는 seed value와 accumulator 클로저를 파라미터로 받는다
+- seed value와 소스 Observable이 방출하는 요소를 대상으로 클로저를 실행하고, result Observable을 통해 결과를 방출한다 (scan 연산자와 동일)
+- accumulator 클로저의 실행 결과가 클로저로 다시 전달되는 것도 scan과 동일
+- 하지만 reduce 연산자는 result Observable을 통해 최종 결과 하나만 방출한다. scan은 중간 과정까지 모두 방출한다
+- 세 번째 파라미터 mapResult는 최종 결과를 다른 형식으로 바꾸고 싶을 때 사용한다
+
+<pre>
+<code>
+let bag = DisposeBag()
+
+enum MyError: Error {
+  case error
+}
+
+let o = Observable.range(start: 1, count: 5)
+
+print("== scan")
+
+o.scan(0, accumulator: +)
+  .subscribe { print($0) }
+  .disposed(by: bag)
+  
+print("== reduce")
+
+o.reduce(0, accumulator: +)
+  .subsribe { print($0) }
+  .disposed(by: bag)
+  
+--> 출력결과
+== scan 
+next(1) // 1
+next(3) // 1 + 2
+next(6) // 3 + 3
+next(10) // 6 + 4
+next(15) // 10 + 5
+completed
+== reduce
+next(15) // 최종결과 하나만 출력된다(scan 연산자와의 가장 큰 차이)
+completed
+<--
+</code>
+</pre>
