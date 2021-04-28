@@ -2175,3 +2175,86 @@ source.connect()
 <--
 </code>
 </pre>
+
+
+
+#### 53/98 refCount Operator
+- refCount 연산자는 다른 연산자와 달리 ConnectableObservableType
+- 다시 말해서 일반 Observable에서는 사용할 수 없고, ConnectableObservable에서만 사용할 수 있다
+- 파라미터는 없고, Observable을 리턴한다
+- refCount는 ConnectableObservable을 통해 생성하는 특별한 Observable이다
+- 앞으로 이 Observable을 refCountObservable이라 부르겠다
+- refCountObservable은 내부에 ConnectableObservable을 유지하면서 새로운 Observer가 추가되는 시점에 자동으로 커넥트 메소드를 호출한다
+- 그리고 Observer가 구독을 중지하고 더 이상 다른 Observer가 없다면 ConnectableObservable에서 sequence를 중지한다
+- 그러다가 새로운 구독자가 추가되면 다시 커넥트 메소드를 호출한다
+- 이 때 ConnectableObservable에서는 새로운 sequence가 시작된다
+
+<pre>
+<code>
+let bag = DisposeBag()
+let source = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance).debug().publish().refCount()
+
+let observer1 = source
+   .subscribe { print("🔵", $0) }
+
+//source.connect() // refCount는 내부적으로 connect를 호출하기 때문에 별도로 connect 연산자를 호출할 필요가 없다
+
+DispatchQueue.main.asyncAfter(deadline: .now() + 3) { // 3초 뒤에 구독 중지
+   observer1.dispose()
+}
+
+DispatchQueue.main.asyncAfter(deadline: .now() + 7) { // 7초 뒤에 구독 시작
+   let observer2 = source.subscribe { print("🔴", $0) }
+
+   DispatchQueue.main.asyncAfter(deadline: .now() + 3) { // 3초 뒤에 구독 중지
+      observer2.dispose()
+   }
+}
+</code>
+</pre>
+
+
+
+#### 54/98 share Operator
+- share 연산자가 리턴하는 Observable은 refCount Observable이다
+- share 연산자는 두 개의 파라미터를 받는다
+    1. 첫 번째 파라미터(replay: Int = 0)는 replay buffer의 크기이다
+        - 파라미터로 0을 전달하면 multicast를 호출할 때 Publish Subject를 전달한다
+        - 0보다 큰 값을 전달한다면 replay Subject를 전달한다
+        - 기본값이 0으로 선언되어 있기 때문에 다른 값을 전달하지 않는다면 새로운 Observer는 구독 이후에 방출되는 event만 전달 받는다
+        - multicast 연산자를 호출하니까 하나의 subject를 통해 sequence를 공유한다
+    
+    2. 두 번째 파라미터(scope: SubjectLifetimeScope = .whileConnected)는 이 subject의 수명을 결정한다
+        - 기본값은 whileConnected로 선언되어 있다
+        - 새로운 구독자가 추가되면(새로운 connection이 시작되면) 새로운 subject가 생성된다
+        - connection이 종료되면 subject는 사라진다
+        - connection마다 새로운 subject가 생성되기 때문에 connection은 다른 connection과 격리된다
+        - 반대로 두 번째 파라미터에 forever를 전달하면 모든 connection이 하나의 subject를 공유한다
+
+<pre>
+<code>
+let bag = DisposeBag()
+let source = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance).debug().share(replay: 5, scope: .forever) // forever를 전달하면 모든 connection이 하나의 subject를 공유한다
+
+let observer1 = source
+   .subscribe { print("🔵", $0) }
+
+let observer2 = source
+   .delaySubscription(.seconds(3), scheduler: MainScheduler.instance)
+   .subscribe { print("🔴", $0) }
+
+DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+   observer1.dispose()
+   observer2.dispose()
+}
+
+DispatchQueue.main.asyncAfter(deadline: .now() + 7) { // 7초 뒤에 새로운 sequence가 시작된다
+   let observer3 = source.subscribe { print("⚫️", $0) }
+
+   DispatchQueue.main.asyncAfter(deadline: .now() + 3) { // 그리고 3초 뒤에 구독 중지
+      observer3.dispose()
+   }
+}
+
+</code>
+</pre>
