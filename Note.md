@@ -1994,7 +1994,184 @@ Observable<Int>.timer(.seconds(2), period: .seconds(5), scheduler: MainScheduler
 // subject.timeout(.seconds(3), other: Observable.just(0), scheduler: MainScheduler.instance)
 //    .subscribe{ print($0) }
 //    .disposed(by: bag)
-
     
+</code>
+</pre>
+
+
+#### 48/98 delay Operator
+- Next event가 구독자로 전달되는 시점을 지정한 시간만큼 지연시킨다
+- 첫 번째 파라미터에는 지연시킬 시간을 전달
+- 두 번째 파라미터에는 delay timer를 실행할 scheduler를 전달
+- Error event는 지연 없이 즉시 전달된다
+
+<pre>
+<code>
+let bag = DisposeBag()
+
+func currentTimeString() -> String {
+   let f = DateFormatter()
+   f.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+   return f.string(from: Date())
+}
+
+Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+    .take(10)
+    .debug()
+    .delay(.seconds(5), scheduler: MainScheduler.instance)
+    .subscribe{ print(currentTimeString(), $0) }
+    .disposed(by: bag)
+    
+Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+    .take(10)
+    .debug()
+    .delaySubscription(.seconds(7), scheduler: MainScheduler.instance) // 7초 동안 아무 Log도 출력되지 않는다
+    .subscribe{ print(currentTimeString(), $0)}
+    .disposed(by: bag)
+        
+</code>
+</pre>
+
+
+---
+
+### [10] Sharing Subscription
+#### 49/98 Sharing Subscription
+- 구독 공유를 통해서 불필요한 중복 작업을 피하는 방법
+<pre>
+<code>
+let bag = DisposeBag()
+
+let source = Observable<String>.create { observer in
+   let url = URL(string: "https://kxcoding-study.azurewebsites.net/api/string")!
+   let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
+      if let data = data, let html = String(data: data, encoding: .utf8) {
+         observer.onNext(html)
+      }
+      
+      observer.onCompleted()
+   }
+   task.resume()
+   
+   return Disposables.create {
+      task.cancel()
+   }
+}
+.debug()
+.share() // share 연산자를 추가하면 모든 구독자가 구독을 공유하기 때문에 중복을 제거해준다
+
+source.subscribe().disposed(by: bag)
+source.subscribe().disposed(by: bag) // 실행 X
+source.subscribe().disposed(by: bag) // 실행 X
+</code>
+</pre>
+
+
+#### 50/98 multicast Operator
+- multicast Operator와 Connectable Observable
+- multicast 연산자는 subject를 파라미터로 받는다
+- 원본 Observable이 방출하는 Event는 Observer에게 전달되는 것이 아니라 이 subject로 전달된다
+- subject는 전달받은 Event를 등록된 다수의 Observer에게 전달한다
+- 기본적으로 unicast 방식으로 동작하는 Observable을 multicast 방식으로 바꿔준다
+- 이를 위해 ConnectableObservable을 리턴한다
+- 일반 Observable은 Observer가 추가되면 새로운 sequence가 시작된다( event 방출 시작 )
+- ConnectableObservable은 sequence가 시작되는 시점이 다르다
+- Observer가 추가되어도 sequence는 시작되지 않고, connect 메소드를 호출하는 시점에 sequence가 시작된다
+- 원본 Observable이 전달하는 Event는 Observer에게 바로 전달되는 것이 아니라 첫 번째 파라미터로 전달한 subject로 전달한다
+- 전달받은 subject가 등록된 모든 Observer에게 Event를 전달한다
+- 모든 Observer가 등록된 이후에 하나의 sequence가 시작되는 패턴을 구현할 수 있다
+- ConnectableObservableAdapter는 원본 Observable과 subject를 연결해주는 특별한 클래스이다
+
+<pre>
+<code>
+let bag = DisposeBag()
+let subject = PublishSubject<Int>()
+
+let source = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance).take(5).multicast(subject)
+
+source
+   .subscribe { print("🔵", $0) }
+   .disposed(by: bag)
+
+source
+   .delaySubscription(.seconds(3), scheduler: MainScheduler.instance)
+   .subscribe { print("🔴", $0) }
+   .disposed(by: bag)
+
+source.connect()
+
+--> 출력결과
+🔵 next(0)
+🔵 next(1)
+🔵 next(2)
+🔴 next(2)
+🔵 next(3)
+🔴 next(3)
+🔵 next(4)
+🔴 next(4)
+🔵 completed
+🔴 completed
+<--
+</code>
+</pre>
+
+
+#### 51/98 publish Operator
+- multicast 연산자를 호출하고 새로운 Publish Subject를 만들어서 파라미터로 전달한다
+- 그 다음 multicast가 리턴하는 ConnectableObservable을 그대로 리턴한다
+- multicast 연산자는 Observable을 공유하기 위해서 내부적으로 subject를 사용한다
+- 파라미터로 Publish Subject를 전달한다면 직접 생성해서 전달하는 것보다 publish 연산자를 사용해서 활용하는 방법이 단순하고 좋다
+- Publish Subject를 자동으로 생성해준다는 점을 제외하면 나머지는 multicast와 동일하다
+
+<pre>
+<code>
+// multicast
+let subject = PublishSubject<Int>()
+let source = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance).take(5).multicast(subject)
+
+// publish
+let source = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance).take(5).publish()
+
+</code>
+</pre>
+
+
+#### 52/98 replay Operator
+- multicast 연산자로 Publish Subject를 전달한다면 Publish 연산자를 사용하고, Replay Subject를 전달하면 replay 연산자를 사용한다
+- 두 연산자 모두 multicast를 조금 더 쉽게 사용하도록 도와주는 유틸리티 연산자이다
+- 보통은 파라미터를 통해 buffer의 크기를 지정하지만, buffer 크기에 제한이 없는 replayAll 연산자도 있다
+- 하지만 경우에 따라 메모리 사용량이 급격하게 증가하는 경우가 있어 가급적 사용하지 않는다
+- replay 연산자를 사용할 때 buffer 크기를 지정하는 데 유의해야 한다. 필요 이상으로 크게 잡을 경우 메모리 문제가 발생할 가능성이 높기 때문이다
+
+<pre>
+<code>
+let bag = DisposeBag()
+let source = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance).take(5).replay(5)
+
+source
+   .subscribe { print("🔵", $0) }
+   .disposed(by: bag)
+
+source
+   .delaySubscription(.seconds(3), scheduler: MainScheduler.instance)
+   .subscribe { print("🔴", $0) }
+   .disposed(by: bag)
+
+source.connect()
+
+--> 출력결과
+🔵 next(0)
+🔵 next(1)
+🔴 next(0)
+🔴 next(1)
+🔵 next(2)
+🔴 next(2)
+🔵 next(3)
+🔴 next(3)
+🔵 next(4)
+🔴 next(4)
+🔵 completed
+🔴 completed
+<--
 </code>
 </pre>
