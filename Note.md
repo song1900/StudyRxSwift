@@ -2258,3 +2258,80 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 7) { // 7초 뒤에 새로운 s
 
 </code>
 </pre>
+
+
+
+
+---
+
+### [11] Scheduler
+#### 55/98 Scheduler
+- RxSwift에서는 GCD 대신 Scheduler 사용
+- Scheduler는 특정 코드가 실행되는 context를 추상화한 것이다
+- context는 로우레벨 스레드가 될 수도 있고, DispatchQueue나 OperationQueue가 될 수도 있다
+- Scheduler는 추상화된 context이기 때문에 Thread와 1:1로 매칭되지 않는다
+- 하나의 Thread에 두 개 이상의 개별 scheduler가 존재하거나, 하나의 scheduler가 두 개의 Thread에 걸쳐 있는 경우도 있다
+- 사용 예
+    1. UI 업데이트
+        - GCD       : Main Queue
+        - RxSwift  : Main Scheduler
+        
+    2. Network 요청이나 파일 처리 작업
+        - GDC       : Global Queue
+        - RxSwift  : Background Scheduler
+        
+
+- RxSwift는 GCD와 마찬가지로 다양한 기본 scheduler를 제공한다
+- 내부적으로 GCD와 유사한 방식으로 동작하고, 실행할 작업을 스케줄링 한다
+- 스케줄링 방식에 따라 Serial Scheduler와 Concurrent Scheduler로 구분한다
+- CurrentThreadScheduler가 가장 기본적인 scheduler이다
+- Main Thread와 연관된 scheduler는 MainScheduler이다. Main Queue처럼 UI를 업데이트할 때 사용한다
+- 작업을 실행할 DispatchQueue를 직접 지정하고 싶다면 SerialDispatchQueueScheduler나 ConcurrentDispatchQueueScheduler를 활용한다
+- 앞에서 사용한 Main Scheduler는 Serial DispatchQueue의 일종이다
+- Background 작업을 실행할 때는 DispatchQueue Scheduler를 사용한다
+- 실행 순서를 제외하거나 동시에 실행 가능한 작업 수를 제한하고 싶다면 OperationQueueScheduler를 사용한다. 이 scheduler는 DispatchQueue가 아닌 OperationQueue를 사용해서 생성한다
+- Unit Test에서 사용하는 TestScheduler가 있다
+- scheduler를 직접 구현할 수도 있다( = Custom Scheduler)
+
+
+<pre>
+<code>
+let bag = DisposeBag()
+
+let backgroundScheduler = ConcurrentDispatchQueueScheduler(queue: DispatchQueue.global())
+
+Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
+    .subscribeOn(MainScheduler.instance) // Observable이 시작되는 Scheduler를 지정
+    .filter { num -> Bool in
+      print(Thread.isMainThread ? "Main Thread" : "Background Thread", ">> filter")
+      return num.isMultiple(of: 2)
+    }
+    .observeOn(backgroundScheduler) // 이어지는 연산자가 실행되는 Scheduler를 지정, 다른 Scheduler로 변경하기 전까지 계속 사용
+    .map { num -> Int in
+      print(Thread.isMainThread ? "Main Thread" : "Background Thread", ">> map")
+      return num * 2
+    }
+    .observeOn(MainScheduler.instance)
+    .subscribe {
+        print(Thread.isMainThread ? "Main Thread" : "Background Thread", ">> subscribe")
+        print($0)
+    }
+    .disposed(by: bag)
+</code>
+</pre>
+
+
+
+---
+
+### [12] Error Handling
+#### 56/98 Error Handling
+- Observable에서 전달한 Error event가 Observer에게 전달되면 구독이 종료되고 더 이상 새로운 Event가 전달되지 않는다
+- 더 이상 새로운 Event를 처리할 수 없게 된다
+- 두 가지 방법으로 문제를 해결
+    1. catchError -  Error event가 전달되면 새로운 Observable을 리턴
+        - Observable이 전달하는 Next 이벤트와 completed 이벤트는 그대로 구독자에게 전달
+        - 반면 Error event가 전달되면 새로운 Observable을 Observer에게 전달
+        
+    2. retry - Error가 발생한 경우 Observable을 다시 구독
+        - Error가 발생하지 않을 때까지 무한정 재시도 하거나, 재시도 횟수를 제한할 수 있다
