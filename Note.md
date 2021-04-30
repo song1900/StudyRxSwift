@@ -2335,3 +2335,38 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
         
     2. retry - Error가 발생한 경우 Observable을 다시 구독
         - Error가 발생하지 않을 때까지 무한정 재시도 하거나, 재시도 횟수를 제한할 수 있다
+
+
+#### 57/98 catchError Operator
+1. cathchError 
+    - catchError event는 Next event와 completed event는 Observer에게 그대로 전달하고, error event는 전달하지 않고 새로운 Observable이나 기본값을 전달
+    - 특히 네트워크 요청을 구현할 때 많이 사용한다
+    - 올바른 응답을 받지 못한 상황에서 로컬 캐시를 사용하거나 기본값을 사용하도록 구현할 수 있다
+
+2. catchErrorJustReturn
+    - 소스 Observable에서 error가 발생하면 파라미터로 전달한 기본값을 Observer에게 전달한다
+    - 파라미터의 형식은 항상 소스 Observable이 방출하는 요소의 형식과 같다
+    - error가 발생했을 때 사용할 수 있는 기본값이 있다면 catchErrorJustReturn 연산자를 사용한다
+    - 하지만 발생한 error 종류에 관계없이 항상 동일한 값이 리턴된다는 단점이 있다
+    - 나머지 경우에는 catchError 연산자를 사용한다
+    - 클로저를 통해 error 처리를 자유롭게 구현할 수 있다는 장점이 있다
+    - 작업을 처음부터 다시 하고 싶다면 retry 연산자를 사용하면 된다
+
+
+#### 58/98 retry
+- Observable에서 error가 발생하면 Observable에 대한 구독을 해제하고 새로운 구독을 시작한다
+- 새로운 구독이 시작되기 때문에 Observable Sequence는 처음부터 다시 시작된다
+- Observable에서 error가 발생하지 않는다면 정상적으로 종료되고, error가 발생한다면 또다시 새로운 구독을 시작한다
+- retry 연산자는 두 가지 형태가 있다
+    1. retry()
+        - 파라미터 없이 호출하면, Observable이 정상적으로 완료될 때까지 계속해서 재시도 한다
+        - 만약 Observable에서 반복적으로 error가 발생하면, 그만큼 재시도 횟수가 늘어나면서 리소스가 낭비된다
+        - 심한 경우 무한 루프에 빠지거나 앱이 강제로 종료될 수 있다
+        - 따라서 파라미터 없이 호출하는 것은 가능한 피해야 한다
+    2. retry(_ maxAttemptCount: Int)
+        - 최대 재시도 횟수를 파라미터받는다
+        - 재시도 횟수를 파라미터로 전달할 때는 항상 1을 더해서 전달해야 한다
+        - retry 연산자는 error가 발생한 즉시 재시도하기 때문에, 재시도 시점을 제어하는 것은 불가능하다
+        - 네트워크 요청에서 error가 발생했다면, 정상적인 응답을 받거나 최대 횟수에 도달할 때까지 계속해서 재시도 한다
+        - 만약 사용자가 재시도 버튼에만 재시도를 탭하고 싶다면 retryWhen을 사용해야 한다
+
