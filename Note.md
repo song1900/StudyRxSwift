@@ -2370,3 +2370,55 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
         - 네트워크 요청에서 error가 발생했다면, 정상적인 응답을 받거나 최대 횟수에 도달할 때까지 계속해서 재시도 한다
         - 만약 사용자가 재시도 버튼에만 재시도를 탭하고 싶다면 retryWhen을 사용해야 한다
 
+
+
+
+---
+
+### [13] RxCocoa Basics
+#### 59/98 RxCocoa Overview
+- RxCocoa는 Cocoa Framework에 Reactive의 장점을 더해주는 Library
+- RxCocoa는 RxSwift를 기반으로하는 별도의 Library
+- Reactive는 RxSwift library에 제네릭 구조체로 선언되어 있다
+- 형식을 Reactive 방식으로 확장할 때 사용한다
+- Reactive의 base 속성이 있는데, 확장할 형식의 인스턴스가 지정된다
+- ReactiveCompatible의 역할은 기존 형식에 rx 속성을 추가한다
+- 코드 마지막에 NSObject가 있는데 NSObject는 Cocoa Framework에 있는 모든 클래스가 상속하는 root 클래스이기 때문에 결과적으로 모든 클래스에 rx라는 속성을 자동으로 추가한다는 의미이다
+- UIButton + Rx에는 tap이라는 멤버가 ControlEvent 형식으로 선언되어 있다
+- ControlEvent는 RxCocoa가 제공하는 trait이다
+- trait는 UI 처리에 특화된 Observable이고, ControlEvent뿐만 아니라 드라이버, 시그널 같은 고유한 특성을 가진 trait가 제공된다
+- tap은 특별한 Observable이라 구독할 수 있다
+- 버튼에서 touchUpInside 이벤트가 전달될 때마다 Observer로 Event가 전달된다
+- UILabel + Rx
+- text 속성과 attributedText 속성이 선언되어 있다
+- text 속성은 Binder 형식으로 돼 있다
+- Binder는 인터페이스 binding에 사용되는 특별한 Observer이다 
+
+
+#### 60/98 Binding
+- data를 UI에 표시하는 의미로 binding이 사용된다
+- binding에는 data 생산자와 data 소비자가 있다
+- data 생산자는 Observable이다
+- 코드 레벨로 설명하면 ObservableType을 채용한 모든 형식이 생산자가 된다
+- data 소비자는 label이나 imageView 같은 UI Component이다
+- 생산자가 생산한 data는 소비자에게 전달되고, 소비자는 적절한 방식으로 data를 소비한다
+- 예를 들어 label은 전달된 텍스트를 화면에 표시한다
+- 반대로 소비자가 생산자에게 data나 event를 전달하는 경우는 없다
+- binder는 UI binding에 사용되는 특별한 Observer이다
+- data 소비자의 역할을 수행한다
+- Observer이기 때문에 binder로 새로운 값을 전달할 수 있지만, Observable이 아니기 때문에 Observer를 추가하는 것은 불가능하다
+- binder는 error 이벤트를 받지 않는다
+- 만약 error 이벤트를 전달하면 실행 모드에 따라 크래시가 발생하거나 error 메시지가 출력된다
+- Observer에서 error 이벤트가 전달되면 Observable sequence가 종료된다
+- Next 이벤트가 전달되지 않으면 binding 된 UI가 더 이상 업데이트 되지 않는다
+- 이런 문제를 막기 위해서 error 이벤트를 받지 않는 것이다
+- binding이 성공하면 UI가 업데이트 된다
+- UI 코드는 메인 스레드에서 실행해야 한다는 것이 기본 중의 기본이다
+- binder는 binding이 메인 스레드에서 실행되는 것을 보장한다
+- UITextField + Rx 
+  - text 속성이 ControlProperty<String?> 타입으로 선언되어 있다
+  - ControlProperty 타입은 data를 특정 UI에 binding할 때 사용하는 특별한 Observable이다
+  - 타입 파라미터가 옵셔널 스트링으로 선언되어 있다
+  - text 속성이 변경될 때마다 Next event를 전달하고 여기에는 옵셔널 스트링 형식의 data가 저장되어 있다
+- RxSwift에서 UI를 업데이트 하기 위해 메인 스레드를 사용해야 하는 경우, GCD의 DispatchQueue.main.async를 사용할 수도 있겠지만, RxSwift에서 제공하는 .observeOn(MainScheduler.instance)를 사용한다
+- Binder 속성을 활용하면 DispatchQueue.main.async나 .observeOn(MainScheduler.instance)를 사용할 필요 없다. .bind(to: ObserverType)메소드를 사용하면 된다
