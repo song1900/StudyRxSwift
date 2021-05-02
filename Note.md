@@ -2422,3 +2422,48 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
   - text 속성이 변경될 때마다 Next event를 전달하고 여기에는 옵셔널 스트링 형식의 data가 저장되어 있다
 - RxSwift에서 UI를 업데이트 하기 위해 메인 스레드를 사용해야 하는 경우, GCD의 DispatchQueue.main.async를 사용할 수도 있겠지만, RxSwift에서 제공하는 .observeOn(MainScheduler.instance)를 사용한다
 - Binder 속성을 활용하면 DispatchQueue.main.async나 .observeOn(MainScheduler.instance)를 사용할 필요 없다. .bind(to: ObserverType)메소드를 사용하면 된다
+
+
+#### 61/98 RxCocoa Traits
+- UI에 특화된 Observable
+- Observable이기 때문에 UI binding에서 data 생산자 역할을 수행한다
+- binder와 반대라고 생각하면 쉽다
+- RxCocoa는 네 가지 traits를 제공한다(ControlProperty, ControlEvent, Driver, Signal)
+- traits는 모든 작업이 Main Scheduler(Main Thread)에서 실행된다
+- 따라서 UI 업데이트 코드를 작성할 때 Scheduler를 직접 작성할 필요가 없다
+- Observable sequence가 error event로 인해 종료되면 UI는 더 이상 업데이트되지않는다
+- 하지만 traits는 error event를 전달하지 않는다. 그래서 이런 문제가 발생하는 경우는 없다
+- UI가 항상 올바른 thread에서 업데이트 되는 것을 보장한다
+- Observable을 구독하면 기본적으로 새로운 sequence가 시작된다
+- traits 역시 Observable이지만, 새로운 sequence가 시작되지는 않는다
+- traits를 구독하는 모든 Observer는 동일한 sequence를 공유한다
+- 일반 Observable에서 share 연산자를 사용한 것과 동일한 방식으로 동작한다
+- UI관련 코드를 더 깔끔하게 쓰고 싶거나, binding이 잘못된 스레드에서 실행되는 것이 싫다면 subscribe 메소드가 아닌 traits를 사용
+ 
+
+#### 62/98 Control Event, Control Property
+- Cocoatouch framework가 제공하는 View에는 다양한 속성이 선언되어 있다
+- rxcocoa는 익스텐션으로 뷰를 확장하고 동일한 이름을 가진 속성들을 추가한다
+- 이런 속성들은 대부분 ControlProperty 형식으로 선언되어 있다
+- ControlProperty는 제네릭 구조체로 선언되어 있고, ControlProtocolType 프로토콜을 채용하고 있다
+- ControlPropertyType 프로토콜은 Observable Type과 Observer Type 프로토콜을 상속하고 있다
+- ControlProperty는 특별한 Observable이면서, 동시에 특별한 Observer이다
+- ControlProperty가 읽기 전용 속성을 확장했다면 Observable의 역할만 수행하고, 읽기 쓰기가 모두 가능하다면 Observer의 역할도 함께 수행한다
+- ControlProperty의 특징
+  - UI binding에 사용되므로 error event를 전달 하지도, 받지도 않는다
+  - completed event는 컨트롤이 제거되기 직전에 전달된다
+  - 모든 Event는 Main Scheduler에서 전달된다
+  - ControlProperty는 sequence를 공유한다
+  - 일반 Observable에서 share 연산자를 호출하고, replay 파라미터로 1을 전달한 것과 동일한 방식으로 동작한다
+  - 새로운 Observer가 추가되면 가장 최근에 저장된 속성값이 바로 전달된다
+  - UI 컨트롤을 상속한 컨트롤들은 다양한 Event를 전달한다
+  - RxCocoa가 확장한 익스텐션에는 Event를 Observable로 wrapping한 속성이 추가되어 있다
+  - 예를 들어 UIButton의 확장을 보면 tap이라는 속성이 선언되어 있다. 이 속성은 ControlEvent 형식으로 선언되어 있다
+  - ControlEvent는 ControlEventType 프로토콜을 채용한 제네릭 타입이다
+  - ControlEventType 프로토콜은 ObservableType 프로토콜을 상속하고 있다
+  - ControlProperty와 달리 Observable의 역할은 수행하지만, Observer의 역할은 수행하지 못한다
+  - control event는 ControlProperty와 다수의 공통점을 가지고 있다
+  - error event를 전달하지 않고 completed event는 컨트롤이 해제되기 직전에 전달된다
+  - Main Scheduler에서 Event를 전달하는 것도 동일하다
+  - 하지만 ControlProperty와 달리 가장 최근 Event를 replay 하지 않는다
+  - 그래서 새로운 Observer는 구독 이후에 전달된 event만 전달 받는다
