@@ -2423,6 +2423,15 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
 - RxSwift에서 UI를 업데이트 하기 위해 메인 스레드를 사용해야 하는 경우, GCD의 DispatchQueue.main.async를 사용할 수도 있겠지만, RxSwift에서 제공하는 .observeOn(MainScheduler.instance)를 사용한다
 - Binder 속성을 활용하면 DispatchQueue.main.async나 .observeOn(MainScheduler.instance)를 사용할 필요 없다. .bind(to: ObserverType)메소드를 사용하면 된다
 
+<pre>
+<code>
+valueField.rx.text
+    .bind(to: valueLabel.rx.text)
+    .disposed(by: disposeBag)
+    
+</code>
+</pre>
+
 
 #### 61/98 RxCocoa Traits
 - UI에 특화된 Observable
@@ -2459,7 +2468,7 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
   - UI 컨트롤을 상속한 컨트롤들은 다양한 Event를 전달한다
   - RxCocoa가 확장한 익스텐션에는 Event를 Observable로 wrapping한 속성이 추가되어 있다
   - 예를 들어 UIButton의 확장을 보면 tap이라는 속성이 선언되어 있다. 이 속성은 ControlEvent 형식으로 선언되어 있다
-  - ControlEvent는 ControlEventType 프로토콜을 채용한 제네릭 타입이다
+  - ControlEvent는 ControlEventType 프로토콜을 채용한 제네릭 구조체이다
   - ControlEventType 프로토콜은 ObservableType 프로토콜을 상속하고 있다
   - ControlProperty와 달리 Observable의 역할은 수행하지만, Observer의 역할은 수행하지 못한다
   - control event는 ControlProperty와 다수의 공통점을 가지고 있다
@@ -2467,3 +2476,64 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
   - Main Scheduler에서 Event를 전달하는 것도 동일하다
   - 하지만 ControlProperty와 달리 가장 최근 Event를 replay 하지 않는다
   - 그래서 새로운 Observer는 구독 이후에 전달된 event만 전달 받는다
+
+<pre>
+<code>
+private func updateComponentLabel() {
+   redComponentLabel.text = "\(Int(redSlider.value))"
+   greenComponentLabel.text = "\(Int(greenSlider.value))"
+   blueComponentLabel.text = "\(Int(blueSlider.value))"
+}
+
+override func viewDidLoad() {
+    super.viewDidLoad()
+    
+    redSlider.rx.value
+        .map { "\(Int($0))" }
+        .bind(to: redComponentLabel.rx.text)
+        .disposed(by: bag)
+    
+    greenSlider.rx.value
+        .map { "\(Int($0))" }
+        .bind(to: greenComponentLabel.rx.text)
+        .disposed(by: bag)
+    
+    blueSlider.rx.value
+        .map { "\(Int($0))" }
+        .bind(to: blueComponentLabel.rx.text)
+        .disposed(by: bag)
+    
+    // update color
+    Observable.combineLatest([redSlider.rx.value, greenSlider.rx.value, blueSlider.rx.value])
+        .map { UIColor(red: CGFloat($0[0]) / 255, green: CGFloat($0[1]) / 255, blue: CGFloat($0[2]) / 255, alpha: 1.0)}
+        .bind(to: colorView.rx.backgroundColor)
+        .disposed(by: bag)
+    
+    // reset
+    resetButton.rx.tap
+        .subscribe(onNext: { [weak self] in
+            self?.colorView.backgroundColor = UIColor.black
+            
+            self?.redSlider.value = 0
+            self?.greenSlider.value = 0
+            self?.blueSlider.value = 0
+            
+            self?.updateComponentLabel()
+        })
+        .disposed(by: bag)
+  
+}
+</code>
+</pre>
+
+
+
+#### 63/98 Driver
+- RxCocoa가 제공하는 traits 중에서 가장 핵심
+- driver는 data를 UI에 binding하는 직관적이고 효율적인 방법을 제공한다
+- driver는 특별한 Observable이고, UI 처리에 특화된 몇 가지 특징을 가지고 있다
+    - error 메시지를 전달하지 않으므로 오류로 인해 UI 업데이트가 중단되는 상황은 발생하지 않는다
+    - Scheduler를 강제로 변환하는 일이 없다면 항상 Main Scheduler에서 작업을 시행한다
+    - driver는 side effect를 공유한다. 그러므로 일반 Observable에서 share 연산자를 호출하고, 화면에 있는 파라미터를 전달한 것과 동일하게 동작한다
+    - 모든 Observer가 sequence를 공유하고 새로운 구독이 시작되면 가장 최근에 전달된 Event가 즉시 전달된다
+    - driver는 asDriver 메소드를 활용해서 사용한다. 이 때 기존에 존재하는 share() 메소드는 지워야 한다
