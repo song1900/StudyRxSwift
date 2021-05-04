@@ -2537,3 +2537,21 @@ override func viewDidLoad() {
     - driver는 side effect를 공유한다. 그러므로 일반 Observable에서 share 연산자를 호출하고, 화면에 있는 파라미터를 전달한 것과 동일하게 동작한다
     - 모든 Observer가 sequence를 공유하고 새로운 구독이 시작되면 가장 최근에 전달된 Event가 즉시 전달된다
     - driver는 asDriver 메소드를 활용해서 사용한다. 이 때 기존에 존재하는 share() 메소드는 지워야 한다
+
+
+
+---
+
+### [14] RxCocoa Common Patterns
+#### 64/98 Table View in RxCocoa
+- Observable을 테이블뷰에 바인딩할 때는 items 메소드를 사용한다
+- Cocoatouch방식으로 delegate를 구현하면 RxCocoa로 구현한 코드는 더 이상 동작하지 않는다
+- delegate 지정하는법
+<pre>
+<code>
+//        listTableView.delegate = self  (x)
+
+        listTableView.rx.setDelegate(self)   (o)
+            .disposed(by: bag)
+</code>
+</pre>
