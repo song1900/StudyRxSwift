@@ -2714,3 +2714,39 @@ extension UIViewController {
 
 </code>
 </pre>
+
+
+
+#### 67/98 Notification Center in RxCocoa
+<pre>
+<code>
+toggleButton.rx.tap
+     .subscribe(onNext: { [unowned self] in
+        if self.textView.isFirstResponder {
+           self.textView.resignFirstResponder()
+        } else {
+           self.textView.becomeFirstResponder()
+        }
+     })
+     .disposed(by: bag)
+
+let willShowObservable = NotificationCenter.default.rx.notification(UIResponder.keyboardWillShowNotification)
+    .map { ($0.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue.height ?? 0}
+
+let willHideObservable = NotificationCenter.default.rx.notification(UIResponder.keyboardWillHideNotification)
+    .map { noti -> CGFloat in 0}
+
+Observable.merge(willShowObservable, willHideObservable)
+    .map { [unowned self] height -> UIEdgeInsets in
+        var inset = self.textView.contentInset
+        inset.bottom = height
+        return inset
+    }
+    .subscribe(onNext: { [weak self] inset in
+        UIView.animate(withDuration: 0.3) {
+            self?.textView.contentInset = inset
+        }
+    })
+    .disposed(by: bag)
+</code>
+</pre>
