@@ -2750,3 +2750,219 @@ Observable.merge(willShowObservable, willHideObservable)
     .disposed(by: bag)
 </code>
 </pre>
+
+
+
+#### 68/98 Gesture Recognizer in RxCocoa
+<pre>
+<code>
+@IBOutlet weak var targetView: UIView!
+
+@IBOutlet var panGesture: UIPanGestureRecognizer!
+
+
+panGesture.rx.event
+    .subscribe(onNext: { [unowned self] gesture in
+        guard let target = gesture.view else { return }
+        
+        let translation = gesture.translation(in: self.view)
+        
+        target.center.x += translation.x
+        target.center.y += translation.y
+        
+        gesture.setTranslation(.zero, in: self.view)
+    })
+    .disposed(by: bag)
+    
+</code>
+</pre>
+
+
+
+
+---
+
+### [15] Custom Extension
+#### 69/98 Custom Binder
+- parameter target: Target object.
+- parameter scheduler: Scheduler used to bind the events.
+- parameter binding: Binding logic.
+
+<pre>
+<code>
+// (1) 개선전
+colorPicker.rx.selectedSegmentIndex
+   .map { index -> UIColor in
+      switch index {
+      case 0:
+         return UIColor.red
+      case 1:
+         return UIColor.green
+      case 2:
+         return UIColor.blue
+      default:
+         return UIColor.black
+      }
+   }
+   .subscribe(onNext: { [weak self] color in
+      self?.valueLabel.textColor = color
+   })
+   .disposed(by: bag)
+
+colorPicker.rx.selectedSegmentIndex
+   .map { index -> String? in
+      switch index {
+      case 0:
+         return "Red"
+      case 1:
+         return "Green"
+      case 2:
+         return "Blue"
+      default:
+         return "Unknown"
+      }
+   }
+   .bind(to: valueLabel.rx.text)
+   .disposed(by: bag)
+   
+   
+// (2) 개선후
+colorPicker.rx.selectedSegmentIndex
+    .bind(to: valueLabel.rx.segmentedValue)
+    .disposed(by: bag)
+    
+    
+extension Reactive where Base: UILabel {
+    var segmentedValue: Binder<Int> {
+        return Binder(self.base) { label, index in
+            switch index {
+            case 0:
+                label.text = "Red"
+                label.textColor = UIColor.red
+            case 1:
+                label.text = "Green"
+                label.textColor = UIColor.green
+            case 2:
+                label.text = "Blue"
+                label.textColor = UIColor.blue
+            default:
+                label.text = "Unknown"
+                label.textColor = UIColor.black
+                
+            }
+        }
+    }
+}
+
+</code>
+</pre>
+
+
+
+#### 70/98 Custom ControlProperty
+- 쓰기만 필요한 속성은 Binder로 구현하고, 읽기와 쓰기 모두 가능해야 한다면 ControlProperty로 구현
+- parameter controlEvents: Events that trigger value update sequence elements.
+- parameter getter: Property value getter.
+- parameter setter: Property value setter.
+
+<pre>
+<code>
+// (1) 개선전
+whiteSlider.rx.value
+   .map { UIColor(white: CGFloat($0), alpha: 1.0) }
+   .bind(to: view.rx.backgroundColor)
+   .disposed(by: bag)
+
+resetButton.rx.tap
+   .map { Float(0.5) }
+   .bind(to: whiteSlider.rx.value)
+   .disposed(by: bag)
+
+resetButton.rx.tap
+   .map { UIColor(white: 0.5, alpha: 1.0) }
+   .bind(to: view.rx.backgroundColor)
+   .disposed(by: bag)
+   
+   
+// (2) 개선후
+whiteSlider.rx.color
+    .bind(to: view.rx.backgroundColor)
+    .disposed(by: bag)
+
+resetButton.rx.tap
+    .map{ _ in UIColor(white: 0.5, alpha: 1.0) }
+    .bind(to: whiteSlider.rx.color.asObserver(), view.rx.backgroundColor.asObserver())
+    .disposed(by: bag)
+    
+    
+extension Reactive where Base: UISlider {
+    var color: ControlProperty<UIColor?> {
+        return base.rx.controlProperty(editingEvents: .valueChanged) { (slider) in
+            UIColor(white: CGFloat(slider.value), alpha: 1.0)
+        } setter: { slider, color in
+            var white = CGFloat(1)
+            color?.getWhite(&white, alpha: nil)
+            slider.value = Float(white)
+        }
+
+    }
+}
+
+</code>
+</pre>
+
+
+
+
+#### 71/98 Custom ControlEvent
+- delegate 패턴을 RxSwift 방식으로 확장하는 방법은 크게 두 가지이다
+- 지금처럼 UIControl을 상속하고 있다면 ControlEvent로 구현한다
+- 반면 LocationManagerDelegate나 WebViewDelegate처럼 UIControl과 관련이 없는 경우에는 DelegateProxy를 구현한다
+
+<pre>
+<code>
+// (1) 개선전
+inputField.delegate = self
+
+extension CustomControlEventViewController: UITextFieldDelegate {
+   func textFieldDidBeginEditing(_ textField: UITextField) {
+      textField.layer.borderColor = UIColor.red.cgColor
+   }
+
+   func textFieldDidEndEditing(_ textField: UITextField) {
+      textField.layer.borderColor = UIColor.gray.cgColor
+   }
+}
+
+// (2) 개선후
+inputField.rx.editingDidBegin
+    .map { UIColor.red }
+    .bind(to: inputField.rx.borderColor)
+    .disposed(by: bag)
+
+inputField.rx.editingDidEnd
+    .map { UIColor.gray }
+    .bind(to: inputField.rx.borderColor)
+    .disposed(by: bag)
+    
+extension Reactive where Base: UITextField {
+    var borderColor: Binder<UIColor?> {
+        return Binder(self.base) { textField, color in
+            textField.layer.borderColor = color?.cgColor
+        }
+    }
+    
+    var editingDidBegin: ControlEvent<Void> {
+        return controlEvent(.editingDidBegin)
+    }
+    
+    var editingDidEnd: ControlEvent<Void> {
+        return controlEvent(.editingDidEnd)
+    }
+     
+}
+</code>
+</pre>
+
+
+
