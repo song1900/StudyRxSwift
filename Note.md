@@ -2,7 +2,7 @@
 
 
 ### [1] Hello, RxSwift
-#### 1/98 Hello, RxSwift
+#### 1 Hello, RxSwift
 - RxSwift를 공부하는 순서
 <br>1. Swift Language
 <br>2. Functional Programming, Protocol Oriented Programming
@@ -17,14 +17,14 @@
 <br> 처음부터 이해되는 것은 말이 안 되니 이해 안 되는 부분은 그냥 건너 뛰어라
 
 
-#### 2/98 Hello Reactive Programming
+#### 2 Hello Reactive Programming
 - RxSwift로 코드를 작성하면 값이나 상태의 변화에 따라서 새로운 결과를 도출하는 코드를 비교적 쉽게 작성할 수 있다
   - 반응형 프로그래밍(Reactive Programming)
 
 ***
 
 ### [2] Key Concepts
-#### 3/98 Observable and Obervers #1
+#### 3 Observable and Obervers #1
 - 가장 중요한 Observable
 <br> Obserbable은 Observable Sequence 또는 Sequence 라고 부른다
 <br> Observable은 Event를 전달한다
@@ -73,7 +73,7 @@
         </code>
         </pre>
     
-#### 4/98 Observable and Obervers #2
+#### 4 Observable and Obervers #2
 - 실제로 event가 전달되는 시점은 observer가 구독을 시작하는 시점
     - Observer는 Observable에서 전달되는 event를 처리한다.
     - 이것을 구독한다고 표현한다
@@ -157,7 +157,7 @@
         </pre>
 
 
-#### 5/98 Disposables
+#### 5 Disposables
 - Disposed는 Observable이 전달하는 Event는 아니다
 - Parameter로 클로저를 던달하면 Observable과 관련된 모든 리소스가 제거된 후에 호출된다
 - Observable이 Completed나 Error Event로 해제되었다면 리소스도 해제된다
@@ -166,7 +166,7 @@
 - dispose() 메소드를 직접 호출하면 completed event가 전달되지 않으므로, 직접 사용하지 않는 것이 좋다
 - 만약 특정 시점에 해지하고 싶다면 take until 메소드를 사용하는 것이 좋다
 
-#### 6/98 Operators
+#### 6 Operators
 
 - Observable과 관련된 여러 메소드들을 연산자라고 부른다
 - 연산자의 특징
@@ -196,7 +196,7 @@ Completed
 ***
 
 ### [3] Subjects
-#### 7/98 Subjects Overview
+#### 7 Subjects Overview
 - Subject를 이해하기 위해서는 Observer와 Observable에 대해 알아야한다
 - Observable은 Event를 전달한다
 - Observer는 Observable을 구독하고 전달되는 Event를 처리한다
@@ -225,7 +225,7 @@ Completed
     - 주로 종료 없이 계속 전달되는 Event Sequence를 처리할 때 활용한다 
 
 
-#### 8/98 Publish Subject
+#### 8 Publish Subject
 - PublishSubject는 Subject로 전달되는 Event를 Observer에게 전달하는 가장 기본적인 형태의 Subject이다
 - Subject는 Observable인 동시에 Observer이다
 - 다른 Source로부터 Event를 전달받을 수 있고, 다른 Observer로 이벤트를 전달할 수 있다
@@ -236,7 +236,7 @@ Completed
 - Event가 사라지는 것이 문제가 된다면 Replay Subject를 사용하거나 Hold Observable을 사용한다
 
 
-#### 9/98 Behavior Subject
+#### 9 Behavior Subject
 - Behavior Subject는 Publish Subject와 유사한 방식으로 동작한다
 - Subject로 전달된 Event를 Observer로 전달하는 것은 동일하다
 - 하지만 Subject를 생성하는 방식에 차이가 있다
@@ -280,7 +280,7 @@ BehaviorSubject3 >> error(error) // or completed
 </pre>
 
 
-#### 10/98 Replay Subjects
+#### 10 Replay Subjects
 - Behavior Subject는 가장 최근 Next event 하나를 저장했다가 새로운 Observer로 전달한다
     - 최신 이벤트를 제외한 나머지 모든 이벤트는 사라진다
 
@@ -294,7 +294,7 @@ BehaviorSubject3 >> error(error) // or completed
 - Replay Subject는 종료 여부에 관계 없이 항상 buffer에 저장돼 있는 Event를 새로운 Observer에게 전달한다
 
 
-#### 11/98 Async Subjects
+#### 11 Async Subjects
 - Async Subject는 이전의 Subject들과 Event를 전달하는 시점에 차이가 있다
 - Publish Subject, Behavior Subject, Replay Subject는 Subject로 Event가 전달되면 즉시 Observer에게 전달한다
 - 반면 Async Subject는 Subject로 Completed event가 전달되기 전까지 어떤 Event도 Observer로 전달하지 않는다
@@ -304,7 +304,7 @@ BehaviorSubject3 >> error(error) // or completed
 - Error event가 전달된 경우에는 Next event가 Observer에게 전달되지 않고, Error event만 전달되고 종료한다
 
 
-#### 12/98 Relays
+#### 12 Relays
 - RxSwift는 두가지 Relay를 제공한다.
     1. PublishRelay
     2. BehaviorRelay
@@ -330,7 +330,7 @@ BehaviorSubject3 >> error(error) // or completed
 ***
 
 ### [4] Create Operators
-#### 13/98 just, of, from
+#### 13 just, of, from
 - 하나의 요소를 방출하는 Observable을 생성할 때는 just 연산자를 사용한다
 - 두 개 이상의 요소를 방출하는 Observable을 생성할 때는 of 연산자를 사용한다
 - just와 of 연산자는 항목을 그대로 방출하기 때문에, 배열을 전달하면 배열이 방출된다
@@ -434,7 +434,7 @@ BehaviorSubject3 >> error(error) // or completed
     </pre>
 
 
-#### 14/98 range, generate
+#### 14 range, generate
 - 정수를 지정된 수만큼 방출하는 Observable을 생성하기 위해서 range 연산자와 generate 연산자를 사용한다
 
 1. range
@@ -509,7 +509,7 @@ BehaviorSubject3 >> error(error) // or completed
     </pre>
 
 
-#### 15/98 repeatElement 
+#### 15 repeatElement 
 - 동일한 요소를 반복적으로 방출하는 Observable을 생성
 - repeatElement는 ObservableType 프로토콜의 Type 메소드로 선언되어 있다
 - 첫 번째 파라미터로 요소를 전달하면 이 요소를 반복적으로 방출하는 Observable을 리턴한다
@@ -541,7 +541,7 @@ completed
 </pre>
 
 
-#### 16/98 deferred
+#### 16 deferred
 - 특정 조건에 따라서 Observable을 생성할 수 있다
 - Observable을 리턴하는 클로저를 파라미터로 받는다
 
@@ -595,7 +595,7 @@ completed
 </pre>
 
 
-#### 17/98 create
+#### 17 create
 - Observable이 동작하는 방식을 직접 구현
 - Observable을 종료하기 위해서는 onError 또는 onCompleted 메소드를 반드시 호출해야 한다
 - 둘 중 하나라도 호출하면 Observable이 종료되기 때문에, 그 이후에 onNext를 호출하면 요소가 방출되지 않는다
@@ -638,7 +638,7 @@ completed
 </pre>
 
 
-#### 18/98 empty, error
+#### 18 empty, error
 - 두 연산자가 생성한 Observable은 Next event를 전달하지 않는다는 공통점이 있다
 - 둘 다 어떠한 요소도 방출하지 않는다
 
@@ -687,7 +687,7 @@ completed
 ***
 
 ### [5] Filtering Operators
-#### 19/98 ignoreElementsOperator 
+#### 19 ignoreElementsOperator 
 - ignoreElements는 Observable이 방출하는 Next event를 필터링하고 Completed event와 Error event만 Observer에 전달한다
 - ignoreElements는 파라미터를 받지 않는다
 - 리턴형은 Completable인데, Completable은 트레이츠라고 부르는 특별한 Observable이다
@@ -709,7 +709,7 @@ completed
 </pre>
 
 
-#### 20/98 elementAt Operator
+#### 20 elementAt Operator
 - elementAt은 특정 인덱스에 위치한 요소를 제한적으로 방출한다
 - elementAt은 정수 인덱스를 파라미터로 받아서 Observable을 리턴한다
 - 해당 인덱스의 요소를 방출하고 Completed event를 전달받는다
@@ -730,7 +730,7 @@ completed
 </pre>
 
 
-#### 21/98 filter Operator
+#### 21 filter Operator
 - filter 연산자는 클로저를 파라미터로 받는다
 - true를 리턴하는 요소가 연산자가 리턴하는 Observable에 포함된다
 <pre>
@@ -754,7 +754,7 @@ completed
 </pre>
 
 
-#### 22/98 skip, skipWhile, skipUntil Operator
+#### 22 skip, skipWhile, skipUntil Operator
 - 특정 요소를 무시
 
 1. skip
@@ -837,7 +837,7 @@ completed
     </pre>
 
 
-#### 23/98 take, takeWhile, takeUntil, takeLast Operator
+#### 23 take, takeWhile, takeUntil, takeLast Operator
 1. take
     - 정수를 파라미터로 받아서 해당 숫자만큼만 요소를 방출한다
     <pre>
@@ -941,7 +941,7 @@ completed
     </pre>
     
     
-    #### 24/98 single Operator
+    #### 24 single Operator
     - single 연산자는 원본 Observable에서 첫 번째 요소만 방출하거나, 조건과 일치하는 첫 번째 요소만 방출한다
     - 두 개 이상의 요소가 방출되는 경우 Error가 발생한다
     <pre>
@@ -1018,7 +1018,7 @@ completed
     </pre>
 
 
-#### 25/98 distinctUntilChange Operator
+#### 25 distinctUntilChange Operator
 - distinctUntilChange 연산자는 동일한 항목이 연속적으로 방출되지 않도록 필터링 해준다
 - 원본 Observable에서 전달되는 두 개의 요소를 순서대로 비교한 다음에 이전 요소와 동일하면 방출하지 않는다
 - 두 개의 요소를 비교할 때는 비교 연산자로 비교한다
@@ -1048,7 +1048,7 @@ completed
 </pre>
 
 
-#### 26/98 debounce, throttle Operator
+#### 26 debounce, throttle Operator
 - 두 연산자는 짧은 시간동안 반복적으로 방출되는 이벤트를 제어한다는 공통점이 있다
 - 연산자로 전달하는 파라미터도 동일하다
 - 하지만 연산의 결과는 완전히 다르다
@@ -1082,7 +1082,7 @@ completed
 ***
 
 ### [6] Tranforming Operators
-#### 27/98 toArray Operator
+#### 27 toArray Operator
 - Observable이 방출하는 모든 요소를 배열에 담은 다음, 이 배열을 방출하는 Observable을 생성한다
 <pre>
 <code>
@@ -1106,7 +1106,7 @@ success([1, 2])
 </pre>
 
 
-#### 28/98 map Operator
+#### 28 map Operator
 - Observable 배출하는 항목을 대상으로 함수를 실행하고 결과를 방출하는 Observable를 리턴한다
 - 사용하다보면 파라미터와 동일한 형식을 리턴해야 한다고 생각하는 경우가 많지만 그런 제약은 없다
 - Observable이 방출하는 요소들을 대상으로 클로저를 실행하고 그 결과를 Observer에게 전달한다
@@ -1136,7 +1136,7 @@ completed
 </pre>
 
 
-#### 29/98 flatMap Operator
+#### 29 flatMap Operator
 - 모든 Observable이 방출하는 항목을 모아서 최종적으로 하나의 Observable을 리턴한다
 - 클로저를 파라미터로 받는데, BehaviorSubject를 원하는대로 변환한 다음 새로운 Observable을 리턴해야 한다
 - flatMap이 내부적으로 여러 개의 Observable을 생성하지만, 최종적으로 모든 Observable이 하나의 Observable로 합쳐지고, 방출되는 항목들이 순서대로 Observer에게 전달된다
@@ -1175,7 +1175,7 @@ next(22)
 </pre>
 
 
-#### 30/98 flatMapFirst, flatMapLatest Operator
+#### 30 flatMapFirst, flatMapLatest Operator
 1. flatMapFirst
     - flatMapFirst의 연산자, 리턴형은 flatMap과 동일하다
     - 하지만 연산자가 리턴하는 Observable에는 처음에 변환된 Observable이 방출하는 항목만 포함된다
@@ -1254,7 +1254,7 @@ next(22)
     </pre>
 
 
-#### 31/98 scan Operator
+#### 31 scan Operator
 - 기본값으로 연산을 시작하고, 원본 Observable이 방출하는 항목을 대상으로 변환을 실행한 다음 결과를 방출하는 하나의 Observable을 리턴한다
 - 원본이 방출하는 항목의 수와 Observer로 전달되는 항목의 수가 동일하다
 - 첫 번째 파라미터로 기본값을 전달하고, 두 번째 파라미터에는 클로저를 전달한다
@@ -1280,7 +1280,7 @@ completed
 </pre>
 
 
-#### 32/98 buffer Operator
+#### 32 buffer Operator
 - 특정 주기 동안 옵저버블이 방출하는 항목을 수집하고 하나의 배열로 리턴한다
 - RxSwift에서는 이런 동작을 Controlled Buffering 이라고 한다
 - 세 개의 파라미터(timeSpan: 항목을 수집할 시간(DispatchTimeInterval), count: 수집할 항목의 최대 숫자(Int), scheduler: SchedulerType)
@@ -1309,7 +1309,7 @@ completed
 </pre>
 
 
-#### 33/98 window Operator
+#### 33 window Operator
 - window 연산자는 버퍼 연산자처럼 timeSpan과 maxCount를 지정해서 원본 Observable이 방출하는 항목들을 작은 단위의 Observable로 분해한다
 - buffer와 달리 window 연산자는 수집된 항목을 방출하는 Observable을 리턴한다
 - 리턴된 Observable이 무엇을 방출하고, 언제 완료되는지 이해하는 것이 중요하다
@@ -1364,7 +1364,7 @@ completed
 </pre>
 
 
-#### 34/98 groupBy Operator
+#### 34 groupBy Operator
 - 연산자를 실행하면 클로저에서 동일한 값을 리턴하는 요소끼리 그룹으로 묶이고 그룹에 속한 요소들은 개별 Observable을 통해 방출된다
 - 연산자가 리턴하는 Observable을 보면 TypeParameter가 grouped Observable로 선언되어 있다
 - 방출하는 요소와 함께 key가 저장되어 있다
@@ -1465,7 +1465,7 @@ completed
 ***
 
 ### [7] Combining Operators
-#### 35/98 startWith Operator
+#### 35 startWith Operator
 - Observable이 요소를 방출하기 전에 다른 항목들을 앞 부분에 추가한다
 - 주로 기본값이나 시작값을 지정할 때 활용한다
 - 파라미터로 전달하는 하나 이상의 값을 Observable sequence 앞 부분에 추가한다. 그 다음 새로운 Observable을 리턴한다
@@ -1497,7 +1497,7 @@ completed
 </pre>
 
 
-#### 36/98 concat Operator
+#### 36 concat Operator
 - 두 개의 Observable을 연결
 - 연결된 모든 Observable이 방출하는 요소들이 방출 순서대로 정렬되지는 않는다
 - 이전 Observable이 모든 요소들을 방출하고 completed event를 전달해야 이어진 Observable이 방출을 시작한다
@@ -1545,7 +1545,7 @@ completed
 </pre>
     
 
-#### 37/98 merge Operator
+#### 37 merge Operator
 - 여러 Observable이 방출하는 event를 하나의 Observable에서 방출하도록 병합하는 merge 연산자
 - concat 연산자와 혼동하기 쉽지만 동작 방식이 다르다
 - concat은 하나의 Observable이 모든 요소를 방출하고 completed event를 전달하면 이어지는 Observable을 연결
@@ -1555,7 +1555,7 @@ completed
 
 
 
-#### 38/98 combineLatest Operator
+#### 38 combineLatest Operator
 - 소스 Observable이 방출하는 최신 요소를 병합하는 combineLatest 연산자
 - combine은 결합한다는 의미이다
 - 소스 Observable을 결합한 다음 파라미터로 전달한 함수를 실행하고 결과를 방출하는 새로운 Observable을 리턴한다
@@ -1610,7 +1610,7 @@ error(error) // error가 하나라도 전달되면 그 즉시 구독자에게 er
 </pre>
 
 
-#### 39/98 zip Operator
+#### 39 zip Operator
 - Indexed Sequencing을 구현하는 zip 연산자
 - 소스 Observable이 방출하는 요소를 결합한다
 - Observable을 결합하고 클로저를 실행한 다음 이 결과를 방출하는 result Observable을 리턴한다
@@ -1654,7 +1654,7 @@ error(error)
 </pre>
 
 
-#### 40/98 withLatestFrom Operator
+#### 40 withLatestFrom Operator
 - 연산자를 호출하는 Observable을 trigger Observable이라고 부르고 파라미터로 전달하는 Observable을 data Observable이라고 부른다
 - trigger Observable이 next event를 방출하면 data Observable이 가장 최근에 방출한 Next event를 Observer에게 전달
 
@@ -1694,7 +1694,7 @@ completed // 바로 전달된다 ( error도 마찬가지 )
 </pre>
 
 
-#### 41/98 sample Operator
+#### 41 sample Operator
 - trigger Observable이 next event를 전달할 때마다 data Observable이 next event를 방출하지만, 동일한 next event를 반복해서 방출하지 않는 sample 연산자
 - dataObservable.withLatestFrom(triggerObservable) 과 같은 형태로 사용한다 (withLatestFrom 연산자와 반대)
 - data Observable에서 연산자를 호출하고 trigger Observable을 파라미터로 전달한다
@@ -1738,7 +1738,7 @@ error(error) //  trigger Observable이 next event를 방출하지 않더라도 �
 
 
 
-#### 42/98 switchLatest Operator
+#### 42 switchLatest Operator
 - 가장 최근에 방출된 Observable을 구독하고, 이 Observable이 전달하는 event를 Observer에게 전달하는 switchLatest 연산자
 - 가장 최근 Observable이 방출하는 event를 Observer에게 전달한다
 - 어떤 Observable이 가장 최근 Observable인지 이해하는 것이 핵심이다
@@ -1795,7 +1795,7 @@ error(error)
 
 
 
-#### 43/98 reduce Operator
+#### 43 reduce Operator
 - seed 값과 Observable이 방출하는 요소를 대상으로 클로저를 실행하고 최종 결과를 Observable로 방출하는 reduce 연산자
 - scan 연산자와 비교하면 쉽게 이해할 수 있다
 - reduce 연산자는 seed value와 accumulator 클로저를 파라미터로 받는다
@@ -1845,7 +1845,7 @@ completed
 ---
 
 ### [8] Conditional Operators
-#### 44/98 amb Operator
+#### 44 amb Operator
 - 두 개 이상의 소스 Observable 중에서 가장 먼저 Next event를 전달하는 Observable을 구독하고 나머지는 무시한다
 - 여러 Observable 중에서 가장 먼저 event를 방출하는 Observable을 선택하는 amb 연산자
 - 여러 서버로 요청을 전달하고 가장 빠른 응답을 처리하는 패턴을 구현할 수 있다
@@ -1888,7 +1888,7 @@ completed
 ---
 
 ### [9] Time-based Operators
-#### 45/98 interval Operator
+#### 45 interval Operator
 - 특정 주기마다 정수를 방출
 - 첫 번째 파라미터로 반복 주기(RxTimeInterval -> Dispatch Time Interval과 같다)를 받고, 두 번째 파라미터로 정수를 방출할 scheduler를 지정
 - 연산자가 리턴하는 Observable은 지정된 주기마다 정수를 반복적으로 방출한다
@@ -1936,7 +1936,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
 </pre>
 
 
-#### 46/98 timer Operator
+#### 46 timer Operator
 - interval과 마찬가지로 정수를 반복적으로 방출하는 Observable을 생성한다
 - 하지만 지연 시간과 반복 주기를 설정할 수 있다
 - interval과 마찬가지로 Type 메소드로 구현되어 있다
@@ -1967,7 +1967,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
 
 
 
-#### 47/98 timeout Operator
+#### 47 timeout Operator
 - timeout 연산자는 소스 Observable이 방출하는 모든 요소에 timeout 정책을 적용한다
 - 첫 번째 파라미터로 timeout 시간을 전달하는데 이 시간 안에 Next event를 전달하지 않으면 Error event를 전달하고 종료시킨다
 - 에러 형식은 'RxError.timeout'이다
@@ -1999,7 +1999,7 @@ Observable<Int>.timer(.seconds(2), period: .seconds(5), scheduler: MainScheduler
 </pre>
 
 
-#### 48/98 delay Operator
+#### 48 delay Operator
 - Next event가 구독자로 전달되는 시점을 지정한 시간만큼 지연시킨다
 - 첫 번째 파라미터에는 지연시킬 시간을 전달
 - 두 번째 파라미터에는 delay timer를 실행할 scheduler를 전달
@@ -2036,7 +2036,7 @@ Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
 ---
 
 ### [10] Sharing Subscription
-#### 49/98 Sharing Subscription
+#### 49 Sharing Subscription
 - 구독 공유를 통해서 불필요한 중복 작업을 피하는 방법
 <pre>
 <code>
@@ -2067,7 +2067,7 @@ source.subscribe().disposed(by: bag) // 실행 X
 </pre>
 
 
-#### 50/98 multicast Operator
+#### 50 multicast Operator
 - multicast Operator와 Connectable Observable
 - multicast 연산자는 subject를 파라미터로 받는다
 - 원본 Observable이 방출하는 Event는 Observer에게 전달되는 것이 아니라 이 subject로 전달된다
@@ -2116,7 +2116,7 @@ source.connect()
 </pre>
 
 
-#### 51/98 publish Operator
+#### 51 publish Operator
 - multicast 연산자를 호출하고 새로운 Publish Subject를 만들어서 파라미터로 전달한다
 - 그 다음 multicast가 리턴하는 ConnectableObservable을 그대로 리턴한다
 - multicast 연산자는 Observable을 공유하기 위해서 내부적으로 subject를 사용한다
@@ -2136,7 +2136,7 @@ let source = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.inst
 </pre>
 
 
-#### 52/98 replay Operator
+#### 52 replay Operator
 - multicast 연산자로 Publish Subject를 전달한다면 Publish 연산자를 사용하고, Replay Subject를 전달하면 replay 연산자를 사용한다
 - 두 연산자 모두 multicast를 조금 더 쉽게 사용하도록 도와주는 유틸리티 연산자이다
 - 보통은 파라미터를 통해 buffer의 크기를 지정하지만, buffer 크기에 제한이 없는 replayAll 연산자도 있다
@@ -2178,7 +2178,7 @@ source.connect()
 
 
 
-#### 53/98 refCount Operator
+#### 53 refCount Operator
 - refCount 연산자는 다른 연산자와 달리 ConnectableObservableType
 - 다시 말해서 일반 Observable에서는 사용할 수 없고, ConnectableObservable에서만 사용할 수 있다
 - 파라미터는 없고, Observable을 리턴한다
@@ -2215,7 +2215,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 7) { // 7초 뒤에 구독 시�
 
 
 
-#### 54/98 share Operator
+#### 54 share Operator
 - share 연산자가 리턴하는 Observable은 refCount Observable이다
 - share 연산자는 두 개의 파라미터를 받는다
     1. 첫 번째 파라미터(replay: Int = 0)는 replay buffer의 크기이다
@@ -2265,7 +2265,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 7) { // 7초 뒤에 새로운 s
 ---
 
 ### [11] Scheduler
-#### 55/98 Scheduler
+#### 55 Scheduler
 - RxSwift에서는 GCD 대신 Scheduler 사용
 - Scheduler는 특정 코드가 실행되는 context를 추상화한 것이다
 - context는 로우레벨 스레드가 될 수도 있고, DispatchQueue나 OperationQueue가 될 수도 있다
@@ -2325,7 +2325,7 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
 ---
 
 ### [12] Error Handling
-#### 56/98 Error Handling
+#### 56 Error Handling
 - Observable에서 전달한 Error event가 Observer에게 전달되면 구독이 종료되고 더 이상 새로운 Event가 전달되지 않는다
 - 더 이상 새로운 Event를 처리할 수 없게 된다
 - 두 가지 방법으로 문제를 해결
@@ -2337,7 +2337,7 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
         - Error가 발생하지 않을 때까지 무한정 재시도 하거나, 재시도 횟수를 제한할 수 있다
 
 
-#### 57/98 catchError Operator
+#### 57 catchError Operator
 1. cathchError 
     - catchError event는 Next event와 completed event는 Observer에게 그대로 전달하고, error event는 전달하지 않고 새로운 Observable이나 기본값을 전달
     - 특히 네트워크 요청을 구현할 때 많이 사용한다
@@ -2353,7 +2353,7 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
     - 작업을 처음부터 다시 하고 싶다면 retry 연산자를 사용하면 된다
 
 
-#### 58/98 retry
+#### 58 retry
 - Observable에서 error가 발생하면 Observable에 대한 구독을 해제하고 새로운 구독을 시작한다
 - 새로운 구독이 시작되기 때문에 Observable Sequence는 처음부터 다시 시작된다
 - Observable에서 error가 발생하지 않는다면 정상적으로 종료되고, error가 발생한다면 또다시 새로운 구독을 시작한다
@@ -2376,7 +2376,7 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
 ---
 
 ### [13] RxCocoa Basics
-#### 59/98 RxCocoa Overview
+#### 59 RxCocoa Overview
 - RxCocoa는 Cocoa Framework에 Reactive의 장점을 더해주는 Library
 - RxCocoa는 RxSwift를 기반으로하는 별도의 Library
 - Reactive는 RxSwift library에 제네릭 구조체로 선언되어 있다
@@ -2395,7 +2395,7 @@ Observable.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
 - Binder는 인터페이스 binding에 사용되는 특별한 Observer이다 
 
 
-#### 60/98 Binding
+#### 60 Binding
 - data를 UI에 표시하는 의미로 binding이 사용된다
 - binding에는 data 생산자와 data 소비자가 있다
 - data 생산자는 Observable이다
@@ -2433,7 +2433,7 @@ valueField.rx.text
 </pre>
 
 
-#### 61/98 RxCocoa Traits
+#### 61 RxCocoa Traits
 - UI에 특화된 Observable
 - Observable이기 때문에 UI binding에서 data 생산자 역할을 수행한다
 - binder와 반대라고 생각하면 쉽다
@@ -2450,7 +2450,7 @@ valueField.rx.text
 - UI관련 코드를 더 깔끔하게 쓰고 싶거나, binding이 잘못된 스레드에서 실행되는 것이 싫다면 subscribe 메소드가 아닌 traits를 사용
  
 
-#### 62/98 Control Event, Control Property
+#### 62 Control Event, Control Property
 - Cocoatouch framework가 제공하는 View에는 다양한 속성이 선언되어 있다
 - rxcocoa는 익스텐션으로 뷰를 확장하고 동일한 이름을 가진 속성들을 추가한다
 - 이런 속성들은 대부분 ControlProperty 형식으로 선언되어 있다
@@ -2528,7 +2528,7 @@ override func viewDidLoad() {
 
 
 
-#### 63/98 Driver
+#### 63 Driver
 - RxCocoa가 제공하는 traits 중에서 가장 핵심
 - driver는 data를 UI에 binding하는 직관적이고 효율적인 방법을 제공한다
 - driver는 특별한 Observable이고, UI 처리에 특화된 몇 가지 특징을 가지고 있다
@@ -2543,7 +2543,7 @@ override func viewDidLoad() {
 ---
 
 ### [14] RxCocoa Common Patterns
-#### 64/98 Table View in RxCocoa
+#### 64 Table View in RxCocoa
 - Observable을 테이블뷰에 바인딩할 때는 items 메소드를 사용한다
 - Cocoatouch방식으로 delegate를 구현하면 RxCocoa로 구현한 코드는 더 이상 동작하지 않는다
 - delegate 지정하는법
@@ -2558,7 +2558,7 @@ override func viewDidLoad() {
 
 
 
-#### 65/98 Collection View in RxCocoa
+#### 65 Collection View in RxCocoa
 <pre>
 <code>
 colorObservable.bind(to: listCollectionView.rx.items(cellIdentifier: "colorCell", cellType: ColorCollectionViewCell.self)) { index, color, cell in
@@ -2586,7 +2586,7 @@ listCollectionView.rx.setDelegate(self)
 
 
 
-#### 66/98 Alert Controller in RxCocoa
+#### 66 Alert Controller in RxCocoa
 <pre>
 <code>
 // viewDidLoad
@@ -2717,7 +2717,7 @@ extension UIViewController {
 
 
 
-#### 67/98 Notification Center in RxCocoa
+#### 67 Notification Center in RxCocoa
 <pre>
 <code>
 toggleButton.rx.tap
@@ -2753,7 +2753,7 @@ Observable.merge(willShowObservable, willHideObservable)
 
 
 
-#### 68/98 Gesture Recognizer in RxCocoa
+#### 68 Gesture Recognizer in RxCocoa
 <pre>
 <code>
 @IBOutlet weak var targetView: UIView!
@@ -2783,7 +2783,7 @@ panGesture.rx.event
 ---
 
 ### [15] Custom Extension
-#### 69/98 Custom Binder
+#### 69 Custom Binder
 - parameter target: Target object.
 - parameter scheduler: Scheduler used to bind the events.
 - parameter binding: Binding logic.
@@ -2859,7 +2859,7 @@ extension Reactive where Base: UILabel {
 
 
 
-#### 70/98 Custom ControlProperty
+#### 70 Custom ControlProperty
 - 쓰기만 필요한 속성은 Binder로 구현하고, 읽기와 쓰기 모두 가능해야 한다면 ControlProperty로 구현
 - parameter controlEvents: Events that trigger value update sequence elements.
 - parameter getter: Property value getter.
@@ -2914,7 +2914,7 @@ extension Reactive where Base: UISlider {
 
 
 
-#### 71/98 Custom ControlEvent
+#### 71 Custom ControlEvent
 - delegate 패턴을 RxSwift 방식으로 확장하는 방법은 크게 두 가지이다
 - 지금처럼 UIControl을 상속하고 있다면 ControlEvent로 구현한다
 - 반면 LocationManagerDelegate나 WebViewDelegate처럼 UIControl과 관련이 없는 경우에는 DelegateProxy를 구현한다
@@ -2966,3 +2966,17 @@ extension Reactive where Base: UITextField {
 
 
 
+#### 72 DelegateProxy
+- Binder, ControlProperty, ControlEvent를 활용하면 많은 부분을 RxSwift 방식으로 확장할 수 있다
+- 하지만 모든 부분을 확장할 수 있는 것은 아니다
+- 예를 들어 위치 기반 코드를 구현한다면 CLLocationManager를 사용하는데, CLLocationManagerDelegate를 구현하고 위치 정보가 전달되는 시점에 필요한 코드를 구현하게 되는데 앞에서 공부한 세 가지로는 RxSwift 방식으로 확장할 수 없고, 이럴 때는 DelegateProxy를 사용해야 한다
+- DelegateProxy는 이름대로 delegate를 대신 처리하는 객체이다
+- 특정 delegate가 호출되는 시점에 구독자로 Next event를 전달해준다
+- CLLocationManagerDelegate를 확장한 proxy는 LocationManager와 구독자 사이에 위치한다
+- delegate 메소드를 호출하는 객체와 구독자 사이에 위치한다
+- DelegateProxy는 앞에서 공부한 세 가지에 비해서 상대적으로 구현하기 어렵다
+- 하지만 구현 패턴에 익숙해지면 거의 모든 부분을 RxSwift 방식으로 확장할 수 있게 된다
+- 처음에는 조금 어려울 수 있지만, 여러번 반복하면서 확실히 익혀두면 좋다
+- DelegateProxyType은 class protocol로 선언되어 있고, 여섯 개의 필수 멤버를 가지고 있다
+- 이 중에서 첫 번째 메소드(registerKnownImplementations())를 제외한 나머지는 protocol extension을 통해서 기본 구현을 제공한다
+- Data Source 역시 동일한 패턴으로 확장할 수 있다
