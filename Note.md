@@ -2980,3 +2980,11 @@ extension Reactive where Base: UITextField {
 - DelegateProxyType은 class protocol로 선언되어 있고, 여섯 개의 필수 멤버를 가지고 있다
 - 이 중에서 첫 번째 메소드(registerKnownImplementations())를 제외한 나머지는 protocol extension을 통해서 기본 구현을 제공한다
 - Data Source 역시 동일한 패턴으로 확장할 수 있다
+
+
+
+
+#### 73 NSObject+Rx
+- DisposeBag 속성을 자동으로 추가해주는 Library
+- https://github.com/RxSwiftCommunity/NSObject-Rx
+- 구조체에서는 사용 불가능
